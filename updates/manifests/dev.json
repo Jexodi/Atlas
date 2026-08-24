@@ -2,7 +2,7 @@
   "version": "3.3.1-dev",
   "channel": "dev",
   "url": "https://github.com/Jexodi/Atlas/releases/download/v3.3.0-dev.1/Atlas-3.3.0-dev.exe",
-  "sha256": "A1A8AE3C5BD222E4C9065017429DE8CD0AC43695EC4752F1FEE773FE21082BB2",
+  "sha256": "A1A8AE3C5BD222E4C9065017429DE8CD0AC43695EC4752F1FEE773FE21082BB",
   "notes": "Test du téléchargement sécurisé Atlas.",
   "published_utc": "2026-08-24T19:00:00Z"
 }
