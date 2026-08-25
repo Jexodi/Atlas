@@ -1,8 +1,8 @@
 {
-  "version": "3.3.3-dev",
+  "version": "3.3.4-dev",
   "channel": "dev",
-  "url": "https://github.com/Jexodi/Atlas/releases/download/v3.3.3-dev/Atlas-3.3.3-dev.exe",
-  "sha256": "FBF53D748AA96525EF1F171D48D4105E66B553E70316B7C6BD3FCEB5C5A126E5",
-  "notes": "Canal de développement Atlas 3.3.3-dev.",
-  "published_utc": "2026-08-24T22:11:00Z"
+  "url": "https://github.com/Jexodi/Atlas/releases/download/v3.3.3-dev/Atlas-3.3.4-dev.exe",
+  "sha256": "d34f67159a1208e4ce73a924f840525908798623d3b44f2bbac0b38e6dc68d1e",
+  "notes": "Canal de développement Atlas 3.3.4-dev.",
+  "published_utc": "2026-08-24T22:57:00Z"
 }
