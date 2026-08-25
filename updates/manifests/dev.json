@@ -1,7 +1,7 @@
 {
   "version": "3.3.5-dev",
   "channel": "dev",
-  "url": "https://github.com/Jexodi/Atlas/releases/download/v3.3.3-dev/Atlas-3.3.5-dev.exe",
+  "url": "https://github.com/Jexodi/Atlas/releases/download/v3.3.5-dev/Atlas-3.3.5-dev.exe",
   "sha256": "1ed8c06a08fc89713190bdc9d08eb78310cab4407b804c75237d25f525ff17bc",
   "notes": "Canal de développement Atlas 3.3.5-dev.",
   "published_utc": "2026-08-24T22:57:00Z"
