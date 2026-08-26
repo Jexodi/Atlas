@@ -1,8 +1,8 @@
 {
-  "version": "3.2.0-rc.1",
-  "channel": "rc",
-  "url": "",
-  "sha256": "",
-  "notes": "Canal Release Candidate Atlas.",
-  "published_utc": "2026-08-24T18:35:00Z"
+    "version":  "3.3.5-rc.1",
+    "channel":  "rc",
+    "url":  "https://github.com/Jexodi/Atlas/releases/download/v3.3.5-rc.1/Atlas-3.3.5-rc.1.exe",
+    "sha256":  "5b50611d85131034b98dd439a025b0ee222f3517ebede5086af1a13634afd62c",
+    "notes":  "Atlas 3.3.5-rc.1 — Release Candidate du canal Experimental.",
+    "published_utc":  "2026-08-26T23:16:56Z"
 }
