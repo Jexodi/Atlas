@@ -1,0 +1,239 @@
+<Page
+    x:Class="Atlas.UI.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer
+        VerticalScrollBarVisibility="Auto"
+        HorizontalScrollBarVisibility="Disabled">
+
+        <StackPanel
+            Margin="34,22,38,38"
+            Spacing="22">
+
+            <StackPanel
+                Spacing="4">
+
+                <TextBlock
+                    Text="Paramètres"
+                    FontFamily="Segoe UI Variable"
+                    FontSize="31"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource AtlasTextBrush}" />
+
+                <TextBlock
+                    Text="Configuration de l’interface native"
+                    FontFamily="Segoe UI Variable"
+                    FontSize="13"
+                    Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+            </StackPanel>
+
+            <Border
+                Style="{StaticResource AtlasCardStyle}">
+
+                <StackPanel
+                    Spacing="18">
+
+                    <TextBlock
+                        Text="CONFIGURATION ACTIVE"
+                        FontFamily="Segoe UI Variable"
+                        FontSize="11"
+                        CharacterSpacing="150"
+                        Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                    <Grid
+                        ColumnSpacing="26"
+                        RowSpacing="12">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition
+                                Width="180" />
+
+                            <ColumnDefinition
+                                Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition
+                                Height="Auto" />
+
+                            <RowDefinition
+                                Height="Auto" />
+
+                            <RowDefinition
+                                Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Grid.Row="0"
+                            Text="Zone Atlas"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        <TextBlock
+                            x:Name="StorageValue"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Foreground="{StaticResource AtlasTextBrush}" />
+
+                        <TextBlock
+                            Grid.Row="1"
+                            Text="Écran"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        <TextBlock
+                            x:Name="ScreenValue"
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Foreground="{StaticResource AtlasTextBrush}" />
+
+                        <TextBlock
+                            Grid.Row="2"
+                            Text="Version"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        <TextBlock
+                            x:Name="VersionValue"
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Text="3.3.5"
+                            Foreground="{StaticResource AtlasTextBrush}" />
+
+                    </Grid>
+
+                </StackPanel>
+
+            </Border>
+
+            <Border
+                Style="{StaticResource AtlasCardStyle}">
+
+                <StackPanel
+                    Spacing="18">
+
+                    <StackPanel
+                        Spacing="4">
+
+                        <TextBlock
+                            Text="MISES À JOUR"
+                            FontFamily="Segoe UI Variable"
+                            FontSize="11"
+                            CharacterSpacing="150"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        <TextBlock
+                            Text="Vérifier la disponibilité d’une nouvelle version d’Atlas."
+                            FontSize="12"
+                            TextWrapping="Wrap"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                    <Grid
+                        ColumnSpacing="26"
+                        RowSpacing="12">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition
+                                Width="180" />
+
+                            <ColumnDefinition
+                                Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition
+                                Height="Auto" />
+
+                            <RowDefinition
+                                Height="Auto" />
+
+                            <RowDefinition
+                                Height="Auto" />
+
+                            <RowDefinition
+                                Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Grid.Row="0"
+                            Text="Canal"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        <ComboBox
+                            x:Name="UpdateChannelComboBox"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            MinWidth="170"
+                            SelectionChanged="UpdateChannelComboBox_SelectionChanged" />
+
+                        <TextBlock
+                            Grid.Row="1"
+                            Text="État"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        <TextBlock
+                            x:Name="UpdateStatusValue"
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Text="Non vérifié"
+                            TextWrapping="Wrap"
+                            Foreground="{StaticResource AtlasTextBrush}" />
+
+                        <TextBlock
+                            Grid.Row="2"
+                            Text="Version disponible"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        <TextBlock
+                            x:Name="AvailableVersionValue"
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Text="—"
+                            Foreground="{StaticResource AtlasTextBrush}" />
+
+                        <TextBlock
+                            Grid.Row="3"
+                            Text="Source"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        <TextBlock
+                            x:Name="UpdateSourceValue"
+                            Grid.Row="3"
+                            Grid.Column="1"
+                            Text="Non configurée"
+                            TextWrapping="Wrap"
+                            Foreground="{StaticResource AtlasTextBrush}" />
+
+                    </Grid>
+
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="12">
+
+                        <ProgressRing
+                            x:Name="UpdateProgress"
+                            Width="20"
+                            Height="20"
+                            IsActive="False"
+                            Visibility="Collapsed" />
+
+                    </StackPanel>
+
+                    <TextBlock
+                        x:Name="UpdateNotesValue"
+                        Text=""
+                        TextWrapping="Wrap"
+                        FontSize="12"
+                        Foreground="{StaticResource AtlasSecondaryTextBrush}"
+                        Visibility="Collapsed" />
+
+                </StackPanel>
+
+            </Border>
+
+        </StackPanel>
+
+    </ScrollViewer>
+
+</Page>

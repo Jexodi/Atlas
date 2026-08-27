@@ -1,0 +1,5 @@
+Atlas local configuration note
+
+The local .env file is intentionally not included in this review archive because it may contain secrets such as the OpenAI API key.
+
+When replacing an existing C:\Atlas installation, keep your current C:\Atlas\.env file or recreate it from .env.example.

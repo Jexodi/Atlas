@@ -1,0 +1,243 @@
+<Page
+    x:Class="Atlas.UI.Views.HomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer
+        HorizontalScrollBarVisibility="Disabled">
+
+        <StackPanel
+            Margin="34,22,38,38"
+            Spacing="22">
+
+            <StackPanel
+                Spacing="4">
+
+                <TextBlock
+                    Text="Accueil"
+                    FontFamily="Segoe UI Variable"
+                    FontSize="31"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource AtlasTextBrush}" />
+
+                <TextBlock
+                    Text="Vue d’ensemble d’Atlas"
+                    FontFamily="Segoe UI Variable"
+                    FontSize="13"
+                    Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+            </StackPanel>
+
+            <Grid
+                ColumnSpacing="18">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition
+                        Width="*" />
+
+                    <ColumnDefinition
+                        Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border
+                    Grid.Column="0"
+                    Style="{StaticResource AtlasCardStyle}"
+                    MinHeight="186">
+
+                    <StackPanel
+                        Spacing="14">
+
+                        <TextBlock
+                            Text="SYSTÈME"
+                            FontFamily="Segoe UI Variable"
+                            FontSize="11"
+                            CharacterSpacing="150"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        <TextBlock
+                            Text="Prêt pour la connexion au Core"
+                            FontFamily="Segoe UI Variable"
+                            FontSize="19"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource AtlasTextBrush}" />
+
+                        <TextBlock
+                            Text="Les données CPU, GPU, mémoire et stockage seront alimentées par les Skills Atlas via l’IPC local."
+                            TextWrapping="Wrap"
+                            FontFamily="Segoe UI Variable"
+                            FontSize="13"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                </Border>
+
+                <Border
+                    Grid.Column="1"
+                    Style="{StaticResource AtlasCardStyle}"
+                    MinHeight="186">
+
+                    <StackPanel
+                        Spacing="14">
+
+                        <TextBlock
+                            Text="RÉSEAU"
+                            FontFamily="Segoe UI Variable"
+                            FontSize="11"
+                            CharacterSpacing="150"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        <TextBlock
+                            Text="Interface native active"
+                            FontFamily="Segoe UI Variable"
+                            FontSize="19"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource AtlasTextBrush}" />
+
+                        <TextBlock
+                            Text="La future liaison Core ↔ Atlas.UI exposera ici l’état réseau sans exécuter de commande arbitraire côté interface."
+                            TextWrapping="Wrap"
+                            FontFamily="Segoe UI Variable"
+                            FontSize="13"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                </Border>
+
+            </Grid>
+
+            <Border
+                Style="{StaticResource AtlasCardStyle}"
+                MinHeight="210">
+
+                <Grid>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition
+                            Height="Auto" />
+
+                        <RowDefinition
+                            Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock
+                        Text="ACTIVITÉ ATLAS"
+                        FontFamily="Segoe UI Variable"
+                        FontSize="11"
+                        CharacterSpacing="150"
+                        Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                    <Grid
+                        Grid.Row="1">
+
+                        <StackPanel
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="8">
+
+                            <Border
+                                Width="240"
+                                Height="2"
+                                CornerRadius="1"
+                                Background="#7055C8FF" />
+
+                            <TextBlock
+                                Text="Core non connecté à cette interface"
+                                HorizontalAlignment="Center"
+                                FontFamily="Segoe UI Variable"
+                                FontSize="13"
+                                Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        </StackPanel>
+
+                    </Grid>
+
+                </Grid>
+
+            </Border>
+
+            <Grid
+                ColumnSpacing="18">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition
+                        Width="2*" />
+
+                    <ColumnDefinition
+                        Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border
+                    Grid.Column="0"
+                    Style="{StaticResource AtlasCardStyle}"
+                    MinHeight="160">
+
+                    <StackPanel
+                        Spacing="10">
+
+                        <TextBlock
+                            Text="ESPACE DE TRAVAIL"
+                            FontFamily="Segoe UI Variable"
+                            FontSize="11"
+                            CharacterSpacing="150"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        <TextBlock
+                            Text="Les fichiers Atlas disposent maintenant de leur propre section."
+                            FontFamily="Segoe UI Variable"
+                            FontSize="17"
+                            FontWeight="SemiBold"
+                            TextWrapping="Wrap"
+                            Foreground="{StaticResource AtlasTextBrush}" />
+
+                        <TextBlock
+                            Text="L’arc de dossiers reste dans le projet mais n’est plus affiché par le Desktop."
+                            TextWrapping="Wrap"
+                            FontFamily="Segoe UI Variable"
+                            FontSize="12"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                </Border>
+
+                <Border
+                    Grid.Column="1"
+                    Style="{StaticResource AtlasCardStyle}"
+                    MinHeight="160">
+
+                    <StackPanel
+                        Spacing="10">
+
+                        <TextBlock
+                            Text="VERSION"
+                            FontFamily="Segoe UI Variable"
+                            FontSize="11"
+                            CharacterSpacing="150"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                        <TextBlock
+                            Text="3.3.5"
+                            FontFamily="Segoe UI Variable"
+                            FontSize="24"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource AtlasTextBrush}" />
+
+                        <TextBlock
+                            Text="UI native WinUI 3"
+                            FontFamily="Segoe UI Variable"
+                            FontSize="12"
+                            Foreground="{StaticResource AtlasSecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                </Border>
+
+            </Grid>
+
+        </StackPanel>
+
+    </ScrollViewer>
+
+</Page>

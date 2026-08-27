@@ -1,0 +1,27 @@
+[project]
+name = "atlas"
+version = "3.3.5"
+description = "Atlas V2 - Assistant personnel intelligent pour Windows"
+requires-python = ">=3.12"
+
+dependencies = [
+    "psutil>=6.0",
+    "pycaw",
+    "sounddevice",
+    "numpy",
+    "python-dotenv",
+    "openai[realtime]"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0"
+]
+
+packaging = [
+    "pyinstaller>=6.15"
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
