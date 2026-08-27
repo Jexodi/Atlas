@@ -47,6 +47,7 @@ if ($null -eq $selected) {
     [pscustomobject]@{
         interface_alias = $null
         interface_description = $null
+        link_speed_bps = $null
         ipv4 = $null
         gateway = $null
         dns = @()
@@ -57,6 +58,8 @@ if ($null -eq $selected) {
 [pscustomobject]@{
     interface_alias = $selected.InterfaceAlias
     interface_description = $selected.InterfaceDescription
+    # Numeric UInt64 in bits/s: never parse the localized LinkSpeed display.
+    link_speed_bps = $selected.NetAdapter.ReceiveLinkSpeed
     ipv4 = @(
         $selected.IPv4Address |
             Select-Object -First 1
@@ -332,15 +335,8 @@ if ($null -eq $selected) {
             and interface_stats.isup
         )
 
-        link_speed_mbps = (
-            int(
-                interface_stats.speed
-            )
-            if (
-                interface_stats is not None
-                and interface_stats.speed > 0
-            )
-            else None
+        link_speed_mbps = self._resolve_link_speed_mbps(
+            alias, config, interface_stats
         )
 
         ipv4 = (
@@ -399,6 +395,28 @@ if ($null -eq $selected) {
                 tx_bps,
         }
 
+    @staticmethod
+    def _resolve_link_speed_mbps(
+        alias: str,
+        config: dict[str, Any],
+        interface_stats,
+    ) -> int | None:
+        if interface_stats is None or not interface_stats.isup:
+            return None
+
+        # Use the UInt64 Windows measurement only for the matching adapter.
+        if alias and alias == config.get("interface_alias"):
+            raw = config.get("link_speed_bps")
+            if isinstance(raw, int) and not isinstance(raw, bool) and raw > 0:
+                return max(1, raw // 1_000_000)
+
+        # Older Windows backends saturate at DWORD_MAX bits/s, truncated
+        # to 4294 Mbit/s by psutil. Do not display that sentinel as a speed.
+        speed = int(interface_stats.speed)
+        if speed > 0 and speed != 4294:
+            return speed
+        return None
+
     def _refresh_network_config_if_needed(
         self,
     ) -> None:
@@ -416,6 +434,9 @@ if ($null -eq $selected) {
         self._network_config_timestamp = (
             now
         )
+
+        # An expired speed must not survive a failed refresh/renegotiation.
+        self._network_config.pop("link_speed_bps", None)
 
         try:
             result = run_fixed_powershell(
