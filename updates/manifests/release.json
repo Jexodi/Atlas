@@ -1,8 +1,8 @@
 {
-  "version": "3.2.0",
-  "channel": "release",
-  "url": "",
-  "sha256": "",
-  "notes": "Version stable Atlas 3.2.0.",
-  "published_utc": "2026-08-24T18:35:00Z"
+    "version":  "3.3.5",
+    "channel":  "release",
+    "url":  "https://github.com/Jexodi/Atlas/releases/download/v3.3.5/Atlas-3.3.5.exe",
+    "sha256":  "c0bb8d657c854b99758bf69832ddbca7ef0ceb2c6cfd89b4fb2c588e5211888b",
+    "notes":  "Atlas 3.3.5 — Version stable du canal Release.",
+    "published_utc":  "2026-08-27T17:50:04Z"
 }
