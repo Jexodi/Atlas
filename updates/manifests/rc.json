@@ -1,8 +1,8 @@
 {
-    "version":  "3.3.5-rc.4",
+    "version":  "3.3.5-rc.5",
     "channel":  "rc",
-    "url":  "https://github.com/Jexodi/Atlas/releases/download/v3.3.5-rc.4/Atlas-3.3.5-rc.4.exe",
-    "sha256":  "66a9947c5cdeeae26f65053b8c42a0136ed256a7dd466242c814e4ac7ea123c0",
-    "notes":  "Atlas 3.3.5-rc.4 — Release Candidate du canal Experimental.",
-    "published_utc":  "2026-08-29T12:25:25Z"
+    "url":  "https://github.com/Jexodi/Atlas/releases/download/v3.3.5-rc.5/Atlas-3.3.5-rc.5.exe",
+    "sha256":  "161c38b10b8fd8e99cc97ed39d58e9b7a0e27412321404f089bf53ba8c47688d",
+    "notes":  "Atlas 3.3.5-rc.5 — Release Candidate du canal Experimental.",
+    "published_utc":  "2026-08-29T12:44:30Z"
 }
