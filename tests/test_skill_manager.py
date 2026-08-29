@@ -76,7 +76,7 @@ class DummySkill(Skill):
 
         result = skill_manager.execute(
             "test.dummy",
-            value="Atlas",
+            value="SIDERON",
         )
 
         assert result.success is True
@@ -84,7 +84,7 @@ class DummySkill(Skill):
         assert result.skill_name == "test.dummy"
 
         assert result.data == {
-            "value": "Atlas",
+            "value": "SIDERON",
         }
 
     def test_unknown_skill_is_rejected(
@@ -212,7 +212,7 @@ class ModificationSkill(Skill):
 
         manager.execute(
             "test.dummy",
-            value="Atlas",
+            value="SIDERON",
         )
 
         assert len(events) == 1

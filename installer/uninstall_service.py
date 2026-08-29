@@ -181,7 +181,7 @@ def main(
     print()
     print(
         "La configuration dans "
-        "C:\\ProgramData\\Atlas est conservée."
+        "C:\\ProgramData\\SIDERON est conservée."
     )
 
 

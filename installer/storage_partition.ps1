@@ -16,10 +16,10 @@
 
 $ErrorActionPreference = "Stop"
 
-$AtlasVolumeLabel = "ATLAS"
-$DefaultFolderRoot = "C:\Atlas"
+$SideronVolumeLabel = "SIDERON"
+$DefaultFolderRoot = "C:\SIDERON"
 
-$AtlasFolders = @(
+$SideronFolders = @(
     "Backups",
     "Cache",
     "Documents",
@@ -65,7 +65,7 @@ function Format-Bytes
     return "$Bytes octets"
 }
 
-function Get-FirstAvailableAtlasDriveLetter
+function Get-FirstAvailableSideronDriveLetter
 {
     # A: reste prioritaire. C: est volontairement exclu.
     $Candidates = @(
@@ -94,10 +94,10 @@ function Get-FirstAvailableAtlasDriveLetter
         }
     }
 
-    throw "Aucune lettre de lecteur n'est disponible pour le volume ATLAS."
+    throw "Aucune lettre de lecteur n'est disponible pour le volume SIDERON."
 }
 
-function Initialize-AtlasStorageLayout
+function Initialize-SideronStorageLayout
 {
     param(
         [string]$Root
@@ -112,7 +112,7 @@ function Initialize-AtlasStorageLayout
             | Out-Null
     }
 
-    foreach ($Folder in $AtlasFolders)
+    foreach ($Folder in $SideronFolders)
     {
         $FolderPath = Join-Path $Root $Folder
 
@@ -162,14 +162,14 @@ function Get-ShrinkPlan
     {
         throw (
             "La partition sélectionnée est de type '$PartitionType'. " +
-            "Atlas refuse de réduire les partitions système, réservées ou de récupération."
+            "Sideron refuse de réduire les partitions système, réservées ou de récupération."
         )
     }
 
     if ($RequestedBytes -ge $PartitionSize)
     {
         throw (
-            "La taille demandée pour ATLAS ($RequestedSizeGB Go) " +
+            "La taille demandée pour SIDERON ($RequestedSizeGB Go) " +
             "est supérieure ou égale à la taille de la partition sélectionnée " +
             "($(Format-Bytes $PartitionSize))."
         )
@@ -187,7 +187,7 @@ function Get-ShrinkPlan
     if ($Volume.FileSystem -ne "NTFS")
     {
         throw (
-            "Atlas réduit uniquement une partition NTFS. " +
+            "Sideron réduit uniquement une partition NTFS. " +
             "Format détecté : $($Volume.FileSystem)."
         )
     }
@@ -255,8 +255,8 @@ function Get-ShrinkPlan
         RequestedSizeBytes = $RequestedBytes
         RequestedSizeGB = $RequestedSizeGB
         NewSourceSizeBytes = $NewSourceSizeBytes
-        TargetDriveLetter = Get-FirstAvailableAtlasDriveLetter
-        VolumeLabel = $AtlasVolumeLabel
+        TargetDriveLetter = Get-FirstAvailableSideronDriveLetter
+        VolumeLabel = $SideronVolumeLabel
         CanCreate = $CanCreate
     }
 }
@@ -270,7 +270,7 @@ function Get-WholeDiskPlan
 
     if ($RequestedDiskNumber -lt 0)
     {
-        throw "Indique -DiskNumber pour choisir le disque entier à dédier à Atlas."
+        throw "Indique -DiskNumber pour choisir le disque entier à dédier à Sideron."
     }
 
     $Disk = Get-Disk `
@@ -279,12 +279,12 @@ function Get-WholeDiskPlan
 
     if ($Disk.IsBoot -or $Disk.IsSystem)
     {
-        throw "Atlas refuse d'effacer le disque système ou le disque de démarrage."
+        throw "Sideron refuse d'effacer le disque système ou le disque de démarrage."
     }
 
     if ($Disk.Size -lt 10GB)
     {
-        throw "Le disque choisi est trop petit pour être dédié à Atlas."
+        throw "Le disque choisi est trop petit pour être dédié à Sideron."
     }
 
     [PSCustomObject]@{
@@ -293,8 +293,8 @@ function Get-WholeDiskPlan
         FriendlyName = $Disk.FriendlyName
         BusType = $Disk.BusType
         SizeBytes = [UInt64]$Disk.Size
-        TargetDriveLetter = Get-FirstAvailableAtlasDriveLetter
-        VolumeLabel = $AtlasVolumeLabel
+        TargetDriveLetter = Get-FirstAvailableSideronDriveLetter
+        VolumeLabel = $SideronVolumeLabel
         CanCreate = $true
     }
 }
@@ -312,8 +312,8 @@ function Show-ShrinkPlan
     Write-Host "Volume source            : $($Plan.SourceDriveLetter):"
     Write-Host "Taille actuelle          : $(Format-Bytes $Plan.SourceCurrentSizeBytes)"
     Write-Host "Espace libre             : $(Format-Bytes $Plan.SourceFreeBytes)"
-    Write-Host "Réduction max Atlas sûre : $(Format-Bytes $Plan.SafeMaximumShrinkBytes)"
-    Write-Host "Taille volume ATLAS      : $($Plan.RequestedSizeGB) Go"
+    Write-Host "Réduction max Sideron sûre : $(Format-Bytes $Plan.SafeMaximumShrinkBytes)"
+    Write-Host "Taille volume SIDERON      : $($Plan.RequestedSizeGB) Go"
     Write-Host "Lettre attribuée         : $($Plan.TargetDriveLetter):"
     Write-Host "Nom du volume            : $($Plan.VolumeLabel)"
 }
@@ -335,7 +335,7 @@ function Show-WholeDiskPlan
     Write-Host "ATTENTION : TOUT LE CONTENU DE CE DISQUE SERA EFFACÉ." -ForegroundColor Red
 }
 
-function Close-AtlasAutoOpenedExplorer
+function Close-SideronAutoOpenedExplorer
 {
     param(
         [string]$DriveLetter
@@ -402,7 +402,7 @@ function Close-AtlasAutoOpenedExplorer
 }
 
 
-function New-AtlasVolumeFromShrink
+function New-SideronVolumeFromShrink
 {
     param(
         $Plan
@@ -423,7 +423,7 @@ function New-AtlasVolumeFromShrink
 
         $ShrinkCompleted = $true
 
-        Write-Host "2/5 - Création du volume ATLAS..." -ForegroundColor Cyan
+        Write-Host "2/5 - Création du volume SIDERON..." -ForegroundColor Cyan
 
         $CreatedPartition = New-Partition `
             -DiskNumber $Plan.DiskNumber `
@@ -449,17 +449,17 @@ function New-AtlasVolumeFromShrink
             -NewDriveLetter $Plan.TargetDriveLetter `
             -ErrorAction Stop
 
-        Write-Host "5/5 - Création de l'arborescence Atlas..." -ForegroundColor Cyan
+        Write-Host "5/5 - Création de l'arborescence Sideron..." -ForegroundColor Cyan
 
         $Root = "$($Plan.TargetDriveLetter):\"
-        Initialize-AtlasStorageLayout -Root $Root
+        Initialize-SideronStorageLayout -Root $Root
 
-        Close-AtlasAutoOpenedExplorer `
+        Close-SideronAutoOpenedExplorer `
             -DriveLetter $Plan.TargetDriveLetter
 
         Write-Host ""
-        Write-Host "VOLUME ATLAS CRÉÉ AVEC SUCCÈS" -ForegroundColor Green
-        Write-Host "ATLAS_STORAGE_ROOT=$Root"
+        Write-Host "VOLUME SIDERON CRÉÉ AVEC SUCCÈS" -ForegroundColor Green
+        Write-Host "SIDERON_STORAGE_ROOT=$Root"
     }
     catch
     {
@@ -479,7 +479,7 @@ function New-AtlasVolumeFromShrink
             }
             catch
             {
-                Write-Host "Impossible de supprimer automatiquement le volume ATLAS partiellement créé." -ForegroundColor Red
+                Write-Host "Impossible de supprimer automatiquement le volume SIDERON partiellement créé." -ForegroundColor Red
                 throw $OriginalError
             }
         }
@@ -504,7 +504,7 @@ function New-AtlasVolumeFromShrink
     }
 }
 
-function New-AtlasVolumeFromWholeDisk
+function New-SideronVolumeFromWholeDisk
 {
     param(
         $Plan
@@ -558,21 +558,21 @@ function New-AtlasVolumeFromWholeDisk
         -NewDriveLetter $Plan.TargetDriveLetter `
         -ErrorAction Stop
 
-    Write-Host "6/6 - Création de l'arborescence Atlas..." -ForegroundColor Cyan
+    Write-Host "6/6 - Création de l'arborescence Sideron..." -ForegroundColor Cyan
 
     $Root = "$($Plan.TargetDriveLetter):\"
-    Initialize-AtlasStorageLayout -Root $Root
+    Initialize-SideronStorageLayout -Root $Root
 
-    Close-AtlasAutoOpenedExplorer `
+    Close-SideronAutoOpenedExplorer `
         -DriveLetter $Plan.TargetDriveLetter
 
     Write-Host ""
-    Write-Host "DISQUE ATLAS PRÉPARÉ AVEC SUCCÈS" -ForegroundColor Green
-    Write-Host "ATLAS_STORAGE_ROOT=$Root"
+    Write-Host "DISQUE SIDERON PRÉPARÉ AVEC SUCCÈS" -ForegroundColor Green
+    Write-Host "SIDERON_STORAGE_ROOT=$Root"
 }
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host " Gestion du stockage Atlas" -ForegroundColor Cyan
+Write-Host " Gestion du stockage Sideron" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -595,11 +595,11 @@ if ($Mode -eq "Folder")
         exit 0
     }
 
-    Initialize-AtlasStorageLayout `
+    Initialize-SideronStorageLayout `
         -Root $DefaultFolderRoot
 
-    Write-Host "STOCKAGE ATLAS CRÉÉ AVEC SUCCÈS" -ForegroundColor Green
-    Write-Host "ATLAS_STORAGE_ROOT=$DefaultFolderRoot"
+    Write-Host "STOCKAGE SIDERON CRÉÉ AVEC SUCCÈS" -ForegroundColor Green
+    Write-Host "SIDERON_STORAGE_ROOT=$DefaultFolderRoot"
 
     exit 0
 }
@@ -629,7 +629,7 @@ if ($Mode -eq "Shrink")
         exit 0
     }
 
-    $Required = "CREER VOLUME ATLAS"
+    $Required = "CREER VOLUME SIDERON"
 
     if ($Confirmation -ne $Required)
     {
@@ -646,7 +646,7 @@ if ($Mode -eq "Shrink")
         exit 3
     }
 
-    New-AtlasVolumeFromShrink -Plan $Plan
+    New-SideronVolumeFromShrink -Plan $Plan
     exit 0
 }
 
@@ -682,8 +682,8 @@ if ($Mode -eq "WholeDisk")
         exit 3
     }
 
-    New-AtlasVolumeFromWholeDisk -Plan $Plan
+    New-SideronVolumeFromWholeDisk -Plan $Plan
     exit 0
 }
 
-throw "Mode de stockage Atlas inconnu."
+throw "Mode de stockage Sideron inconnu."

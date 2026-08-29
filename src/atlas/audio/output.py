@@ -70,7 +70,7 @@ class AudioOutput:
             return
 
         self.logger.info(
-            "Démarrage de la sortie audio Atlas."
+            "Démarrage de la sortie audio Sideron."
         )
 
         self._stream = sd.RawOutputStream(
@@ -92,7 +92,7 @@ class AudioOutput:
         except asyncio.CancelledError:
 
             self.logger.info(
-                "Arrêt de la sortie audio Atlas."
+                "Arrêt de la sortie audio Sideron."
             )
 
             raise
@@ -163,7 +163,7 @@ class AudioOutput:
                         ]
                     )
 
-                    # Niveau réel de la voix Atlas.
+                    # Niveau réel de la voix Sideron.
                     samples = np.frombuffer(
                         played_audio,
                         dtype="<i2",

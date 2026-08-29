@@ -9,8 +9,8 @@ from atlas.skills.base import (
 )
 
 from atlas.storage import (
-    AtlasStorage,
-    AtlasStorageError,
+    SideronStorage,
+    SideronStorageError,
 )
 
 
@@ -20,8 +20,8 @@ class CreateWorkspaceDirectorySkill(Skill):
 
     description = (
         "Crée un dossier uniquement dans la zone de stockage "
-        "sécurisée d'Atlas. "
-        "Le chemin doit être relatif à la zone Atlas."
+        "sécurisée d'Sideron. "
+        "Le chemin doit être relatif à la zone Sideron."
     )
 
     risk_level = RiskLevel.SAFE
@@ -37,7 +37,7 @@ class CreateWorkspaceDirectorySkill(Skill):
                 "type": "string",
                 "description": (
                     "Chemin relatif du dossier à créer dans "
-                    "la zone Atlas. "
+                    "la zone Sideron. "
                     "Exemple : Projects/MonProjet"
                 ),
             },
@@ -50,7 +50,7 @@ class CreateWorkspaceDirectorySkill(Skill):
 
     def __init__(
         self,
-        storage: AtlasStorage,
+        storage: SideronStorage,
     ) -> None:
 
         self.storage = storage
@@ -94,7 +94,7 @@ class CreateWorkspaceDirectorySkill(Skill):
                 )
             )
 
-        except AtlasStorageError as exc:
+        except SideronStorageError as exc:
 
             return SkillResult(
                 success=False,
@@ -105,7 +105,7 @@ class CreateWorkspaceDirectorySkill(Skill):
             success=True,
             message=(
                 f"Le dossier '{destination.name}' "
-                "a été créé dans la zone Atlas."
+                "a été créé dans la zone Sideron."
             ),
             data={
                 "path": str(

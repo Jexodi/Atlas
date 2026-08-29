@@ -9,8 +9,8 @@ from atlas.skills.base import (
 )
 
 from atlas.storage import (
-    AtlasStorage,
-    AtlasStorageError,
+    SideronStorage,
+    SideronStorageError,
 )
 
 
@@ -20,7 +20,7 @@ class WriteWorkspaceFileSkill(Skill):
 
     description = (
         "Remplace le contenu d'un fichier texte existant "
-        "uniquement dans la zone sécurisée d'Atlas. "
+        "uniquement dans la zone sécurisée d'Sideron. "
         "Le fichier doit déjà exister."
     )
 
@@ -37,7 +37,7 @@ class WriteWorkspaceFileSkill(Skill):
                 "type": "string",
                 "description": (
                     "Chemin relatif du fichier existant dans "
-                    "la zone Atlas. "
+                    "la zone Sideron. "
                     "Exemple : Documents/notes.txt"
                 ),
             },
@@ -57,7 +57,7 @@ class WriteWorkspaceFileSkill(Skill):
 
     def __init__(
         self,
-        storage: AtlasStorage,
+        storage: SideronStorage,
     ) -> None:
 
         self.storage = storage
@@ -116,7 +116,7 @@ class WriteWorkspaceFileSkill(Skill):
                 )
             )
 
-        except AtlasStorageError as exc:
+        except SideronStorageError as exc:
 
             return SkillResult(
                 success=False,
@@ -127,7 +127,7 @@ class WriteWorkspaceFileSkill(Skill):
             success=True,
             message=(
                 f"Le fichier '{destination.name}' "
-                "a été modifié dans la zone Atlas."
+                "a été modifié dans la zone Sideron."
             ),
             data={
                 "path": str(

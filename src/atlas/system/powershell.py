@@ -16,7 +16,7 @@ def run_fixed_powershell(
     execution_policy: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """
-    Exécute uniquement un script PowerShell prédéfini dans le code Atlas.
+    Exécute uniquement un script PowerShell prédéfini dans le code Sideron.
 
     Cette fonction n'est pas exposée à OpenAI et n'accepte aucune commande
     libre provenant d'un tool call.

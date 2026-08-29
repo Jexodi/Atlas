@@ -9,8 +9,8 @@ from atlas.skills.base import (
 )
 
 from atlas.storage import (
-    AtlasStorage,
-    AtlasStorageError,
+    SideronStorage,
+    SideronStorageError,
 )
 
 
@@ -20,7 +20,7 @@ class ImportFileSkill(Skill):
 
     description = (
         "Copie un fichier existant depuis le PC vers "
-        "la zone de stockage sécurisée d'Atlas. "
+        "la zone de stockage sécurisée d'Sideron. "
         "Le fichier source n'est jamais modifié."
     )
 
@@ -37,13 +37,13 @@ class ImportFileSkill(Skill):
                 "type": "string",
                 "description": (
                     "Chemin Windows absolu du fichier "
-                    "à copier dans la zone Atlas."
+                    "à copier dans la zone Sideron."
                 ),
             },
             "destination_directory": {
                 "type": "string",
                 "description": (
-                    "Dossier relatif dans la zone Atlas. "
+                    "Dossier relatif dans la zone Sideron. "
                     "Par défaut : Imports."
                 ),
                 "default": "Imports",
@@ -57,7 +57,7 @@ class ImportFileSkill(Skill):
 
     def __init__(
         self,
-        storage: AtlasStorage,
+        storage: SideronStorage,
     ) -> None:
 
         self.storage = storage
@@ -121,7 +121,7 @@ class ImportFileSkill(Skill):
                 destination_directory=destination_directory,
             )
 
-        except AtlasStorageError as exc:
+        except SideronStorageError as exc:
 
             return SkillResult(
                 success=False,
@@ -132,7 +132,7 @@ class ImportFileSkill(Skill):
             success=True,
             message=(
                 f"Le fichier '{result.source.name}' "
-                "a été copié dans la zone Atlas."
+                "a été copié dans la zone Sideron."
             ),
             data={
                 "source": str(

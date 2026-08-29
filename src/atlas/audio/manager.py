@@ -238,7 +238,7 @@ class AudioManager:
 
         if self.pipeline is None:
             raise RuntimeError(
-                "Le pipeline audio Atlas n'est pas initialisé."
+                "Le pipeline audio Sideron n'est pas initialisé."
             )
 
         requested_mode = ListeningMode.from_value(

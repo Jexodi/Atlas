@@ -8,14 +8,14 @@ from pathlib import Path
 from typing import Any
 
 
-SERVICE_NAME = "AtlasV2Service"
+SERVICE_NAME = "SIDERONService"
 
 SERVICE_DISPLAY_NAME = (
-    "Atlas V2 Privileged Service"
+    "Sideron V2 Privileged Service"
 )
 
 SERVICE_DESCRIPTION = (
-    "Service privilégié local d'Atlas V2."
+    "Service privilégié local d'Sideron V2."
 )
 
 
@@ -26,19 +26,19 @@ PROGRAM_DATA = Path(
     )
 )
 
-ATLAS_SERVICE_DATA_DIRECTORY = (
+SIDERON_SERVICE_DATA_DIRECTORY = (
     PROGRAM_DATA
-    / "Atlas"
+    / "SIDERON"
 )
 
 SERVICE_CONFIG_PATH = (
-    ATLAS_SERVICE_DATA_DIRECTORY
+    SIDERON_SERVICE_DATA_DIRECTORY
     / "service_config.json"
 )
 
 SERVICE_LOG_PATH = (
-    ATLAS_SERVICE_DATA_DIRECTORY
-    / "atlas_service.log"
+    SIDERON_SERVICE_DATA_DIRECTORY
+    / "sideron_service.log"
 )
 
 
@@ -47,7 +47,7 @@ SID_PATTERN = re.compile(
 )
 
 
-class AtlasServiceConfigError(
+class SideronServiceConfigError(
     RuntimeError
 ):
     pass
@@ -62,7 +62,7 @@ def validate_sid(
         str,
     ):
 
-        raise AtlasServiceConfigError(
+        raise SideronServiceConfigError(
             "Le SID doit être une chaîne."
         )
 
@@ -72,8 +72,8 @@ def validate_sid(
         sid
     ):
 
-        raise AtlasServiceConfigError(
-            "Le SID utilisateur Atlas "
+        raise SideronServiceConfigError(
+            "Le SID utilisateur Sideron "
             "est invalide."
         )
 
@@ -83,13 +83,13 @@ def validate_sid(
 def ensure_data_directory(
 ) -> Path:
 
-    ATLAS_SERVICE_DATA_DIRECTORY.mkdir(
+    SIDERON_SERVICE_DATA_DIRECTORY.mkdir(
         parents=True,
         exist_ok=True,
     )
 
     return (
-        ATLAS_SERVICE_DATA_DIRECTORY
+        SIDERON_SERVICE_DATA_DIRECTORY
     )
 
 
@@ -140,8 +140,8 @@ def load_service_config(
 
     if not SERVICE_CONFIG_PATH.exists():
 
-        raise AtlasServiceConfigError(
-            "Configuration AtlasService "
+        raise SideronServiceConfigError(
+            "Configuration SideronService "
             f"introuvable : {SERVICE_CONFIG_PATH}"
         )
 
@@ -158,9 +158,9 @@ def load_service_config(
         json.JSONDecodeError,
     ) as exc:
 
-        raise AtlasServiceConfigError(
+        raise SideronServiceConfigError(
             "Impossible de lire la "
-            "configuration AtlasService."
+            "configuration SideronService."
         ) from exc
 
     if not isinstance(
@@ -168,9 +168,9 @@ def load_service_config(
         dict,
     ):
 
-        raise AtlasServiceConfigError(
+        raise SideronServiceConfigError(
             "Format de configuration "
-            "AtlasService invalide."
+            "SideronService invalide."
         )
 
     version = payload.get(
@@ -179,9 +179,9 @@ def load_service_config(
 
     if version != 1:
 
-        raise AtlasServiceConfigError(
+        raise SideronServiceConfigError(
             "Version de configuration "
-            "AtlasService incompatible."
+            "SideronService incompatible."
         )
 
     allowed_user_sid = (

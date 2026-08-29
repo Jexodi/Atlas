@@ -1,7 +1,7 @@
-from atlas.ipc.telemetry import AtlasTelemetryPublisher
-from atlas.ipc.ui_bridge import AtlasUiBridge
+from atlas.ipc.telemetry import SideronTelemetryPublisher
+from atlas.ipc.ui_bridge import SideronUiBridge
 
 __all__ = [
-    "AtlasTelemetryPublisher",
-    "AtlasUiBridge",
+    "SideronTelemetryPublisher",
+    "SideronUiBridge",
 ]

@@ -18,7 +18,7 @@ TOKEN_USER_CLASS = 1
 SDDL_REVISION_1 = 1
 
 
-# Droits nécessaires au CLIENT Atlas :
+# Droits nécessaires au CLIENT Sideron :
 #
 # FILE_READ_DATA
 # FILE_WRITE_DATA
@@ -33,7 +33,7 @@ SDDL_REVISION_1 = 1
 # car pour un Named Pipe ce bit correspond aussi à
 # FILE_CREATE_PIPE_INSTANCE.
 #
-# Cela empêche le client Atlas d'obtenir le droit
+# Cela empêche le client Sideron d'obtenir le droit
 # de créer lui-même une instance serveur du pipe.
 
 CLIENT_PIPE_ACCESS_MASK = 0x0012019B
@@ -366,7 +366,7 @@ def resolve_allowed_user_sid(
     if sid is None:
 
         sid = os.getenv(
-            "ATLAS_ALLOWED_USER_SID"
+            "SIDERON_ALLOWED_USER_SID"
         )
 
     if sid is None:
@@ -380,7 +380,7 @@ def resolve_allowed_user_sid(
     ):
 
         raise PipeSecurityError(
-            "Le SID utilisateur Atlas "
+            "Le SID utilisateur Sideron "
             "est invalide."
         )
 
@@ -412,7 +412,7 @@ def create_pipe_security_attributes(
     # SY = LocalSystem
     # BA = Builtin Administrators
     #
-    # L'utilisateur Atlas reçoit uniquement
+    # L'utilisateur Sideron reçoit uniquement
     # les droits individuels nécessaires au
     # transport duplex.
 

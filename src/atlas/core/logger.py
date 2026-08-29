@@ -6,7 +6,7 @@ from pathlib import Path
 
 def _get_logs_directory() -> Path:
     configured_directory = os.environ.get(
-        "ATLAS_LOG_DIR",
+        "SIDERON_LOG_DIR",
         ""
     ).strip()
 
@@ -25,13 +25,13 @@ def _get_logs_directory() -> Path:
     if local_app_data:
         return (
             Path(local_app_data)
-            / "Atlas"
+            / "SIDERON"
             / "logs"
         )
 
     return (
         Path(tempfile.gettempdir())
-        / "Atlas"
+        / "SIDERON"
         / "logs"
     )
 
@@ -64,7 +64,7 @@ def setup_logger(
     console_handler.setFormatter(formatter)
 
     file_handler = logging.FileHandler(
-        logs_directory / "atlas.log",
+        logs_directory / "sideron.log",
         encoding="utf-8"
     )
     file_handler.setFormatter(formatter)

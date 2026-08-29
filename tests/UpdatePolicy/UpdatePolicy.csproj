@@ -6,6 +6,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../ui-native/Atlas.UI/Services/AtlasUpdateService.cs" Link="AtlasUpdateService.cs" />
+    <Compile Include="../../ui-native/SIDERON.UI/Services/SIDERONUpdateService.cs" Link="SideronUpdateService.cs" />
   </ItemGroup>
 </Project>

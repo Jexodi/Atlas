@@ -57,12 +57,12 @@ from atlas.service.protocol import (
     ServiceRequest,
 )
 
-from atlas_service import (
-    AtlasServiceServer,
+from sideron_service import (
+    SideronServiceServer,
 )
 
 from pipe_server import (
-    AtlasPipeServer,
+    SideronPipeServer,
 )
 
 
@@ -214,7 +214,7 @@ advapi32.SetServiceStatus.restype = (
 # =========================================================
 
 
-class AtlasWindowsService:
+class SideronWindowsService:
 
     def __init__(
         self,
@@ -265,7 +265,7 @@ class AtlasWindowsService:
             "========================================"
         )
         print(
-            " AtlasService Windows"
+            " SideronService Windows"
         )
         print(
             "========================================"
@@ -413,7 +413,7 @@ class AtlasWindowsService:
         self._initialize_logging()
 
         print(
-            "Initialisation AtlasService..."
+            "Initialisation SideronService..."
         )
 
         allowed_user_sid = (
@@ -421,16 +421,16 @@ class AtlasWindowsService:
         )
 
         print(
-            "SID Atlas autorisé :",
+            "SID Sideron autorisé :",
             allowed_user_sid,
         )
 
         service_server = (
-            AtlasServiceServer()
+            SideronServiceServer()
         )
 
         pipe_server = (
-            AtlasPipeServer(
+            SideronPipeServer(
                 allowed_user_sid=(
                     allowed_user_sid
                 )
@@ -453,7 +453,7 @@ class AtlasWindowsService:
                     ),
                 },
                 name=(
-                    "AtlasServicePipe"
+                    "SideronServicePipe"
                 ),
                 daemon=True,
             )
@@ -470,13 +470,13 @@ class AtlasWindowsService:
         )
 
         print(
-            "AtlasService démarré."
+            "SideronService démarré."
         )
 
         self.stop_event.wait()
 
         print(
-            "Arrêt AtlasService..."
+            "Arrêt SideronService..."
         )
 
         if (
@@ -493,7 +493,7 @@ class AtlasWindowsService:
         )
 
         print(
-            "AtlasService arrêté."
+            "SideronService arrêté."
         )
 
 
@@ -502,7 +502,7 @@ class AtlasWindowsService:
 # =========================================================
 
 SERVICE_RUNTIME = (
-    AtlasWindowsService()
+    SideronWindowsService()
 )
 
 
@@ -568,7 +568,7 @@ def service_main(
             ) as log_file:
 
                 log_file.write(
-                    "\nERREUR FATALE ATLAS SERVICE\n"
+                    "\nERREUR FATALE SIDERON SERVICE\n"
                 )
 
                 traceback.print_exc(
@@ -600,7 +600,7 @@ def run_self_test(
 ) -> int:
 
     # Ce test ne démarre pas le Named Pipe et ne requiert
-    # pas encore de configuration dans C:\ProgramData\Atlas.
+    # pas encore de configuration dans C:\ProgramData\SIDERON.
     # Il valide simplement que le bundle peut charger les
     # composants critiques du service autonome.
 
@@ -609,13 +609,13 @@ def run_self_test(
         return 10
 
     if not callable(
-        AtlasServiceServer
+        SideronServiceServer
     ):
 
         return 11
 
     if not callable(
-        AtlasPipeServer
+        SideronPipeServer
     ):
 
         return 12
@@ -666,7 +666,7 @@ def main(
 
         raise RuntimeError(
             "Impossible de connecter "
-            "AtlasService au Service Control "
+            "SideronService au Service Control "
             f"Manager : {ctypes.WinError(error)}"
         )
 

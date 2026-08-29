@@ -8,7 +8,7 @@ from typing import Any
 
 PROTOCOL_VERSION = 2
 
-PIPE_NAME = "AtlasV2Service"
+PIPE_NAME = "SIDERONService"
 
 PIPE_ADDRESS = (
     rf"\\.\pipe\{PIPE_NAME}"
@@ -164,13 +164,13 @@ def encode_message(
 
         raise ServiceProtocolError(
             "Impossible de sérialiser "
-            "le message AtlasService."
+            "le message SideronService."
         ) from exc
 
     if len(raw) > MAX_MESSAGE_SIZE:
 
         raise ServiceProtocolError(
-            "Le message AtlasService "
+            "Le message SideronService "
             "dépasse la taille maximale."
         )
 

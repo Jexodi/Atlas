@@ -9,8 +9,8 @@ from atlas.skills.base import (
 )
 
 from atlas.storage import (
-    AtlasStorage,
-    AtlasStorageError,
+    SideronStorage,
+    SideronStorageError,
 )
 
 
@@ -20,7 +20,7 @@ class DeleteWorkspaceItemSkill(Skill):
 
     description = (
         "Supprime définitivement un fichier ou un dossier "
-        "uniquement dans la zone sécurisée d'Atlas. "
+        "uniquement dans la zone sécurisée d'Sideron. "
         "Cette action nécessite toujours une confirmation "
         "explicite de l'utilisateur."
     )
@@ -40,7 +40,7 @@ class DeleteWorkspaceItemSkill(Skill):
                 "type": "string",
                 "description": (
                     "Chemin relatif du fichier ou dossier "
-                    "à supprimer dans la zone Atlas. "
+                    "à supprimer dans la zone Sideron. "
                     "Exemple : Projects/Test/temp.txt"
                 ),
             },
@@ -53,7 +53,7 @@ class DeleteWorkspaceItemSkill(Skill):
 
     def __init__(
         self,
-        storage: AtlasStorage,
+        storage: SideronStorage,
     ) -> None:
 
         self.storage = storage
@@ -83,7 +83,7 @@ class DeleteWorkspaceItemSkill(Skill):
             )
 
         # La validation du confinement reste assurée
-        # par AtlasStorage.
+        # par SideronStorage.
         self.storage.workspace_path(
             path
         )
@@ -117,7 +117,7 @@ class DeleteWorkspaceItemSkill(Skill):
 
         return (
             f"Confirmez-vous la suppression définitive de "
-            f"{item_type} '{path}' dans la zone Atlas ?"
+            f"{item_type} '{path}' dans la zone Sideron ?"
         )
 
     def execute(
@@ -149,7 +149,7 @@ class DeleteWorkspaceItemSkill(Skill):
                 path
             )
 
-        except AtlasStorageError as exc:
+        except SideronStorageError as exc:
 
             return SkillResult(
                 success=False,
@@ -160,7 +160,7 @@ class DeleteWorkspaceItemSkill(Skill):
             success=True,
             message=(
                 f"Le {item_type} '{item_name}' "
-                "a été supprimé de la zone Atlas."
+                "a été supprimé de la zone Sideron."
             ),
             data={
                 "path": path,

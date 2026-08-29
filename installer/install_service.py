@@ -31,7 +31,7 @@ sys.path.insert(
 
 
 from atlas.service.config import (
-    ATLAS_SERVICE_DATA_DIRECTORY,
+    SIDERON_SERVICE_DATA_DIRECTORY,
     SERVICE_CONFIG_PATH,
     SERVICE_DESCRIPTION,
     SERVICE_DISPLAY_NAME,
@@ -154,7 +154,7 @@ def secure_service_data(
 ) -> None:
 
     directory = str(
-        ATLAS_SERVICE_DATA_DIRECTORY
+        SIDERON_SERVICE_DATA_DIRECTORY
     )
 
     config = str(
@@ -163,7 +163,7 @@ def secure_service_data(
 
     # Dossier :
     # SYSTEM / Administrateurs : Full Control
-    # utilisateur Atlas : Read + Execute
+    # utilisateur Sideron : Read + Execute
 
     run_command(
         [
@@ -187,7 +187,7 @@ def secure_service_data(
     )
 
     # Configuration :
-    # utilisateur Atlas peut la lire,
+    # utilisateur Sideron peut la lire,
     # mais ne peut pas la modifier.
 
     run_command(
@@ -204,7 +204,7 @@ def secure_service_data(
 
 
 # =========================================================
-# Executable AtlasService autonome
+# Executable SideronService autonome
 # =========================================================
 
 
@@ -228,16 +228,16 @@ def resolve_service_executable(
             ROOT
             / "build"
             / "service-dist"
-            / "Atlas.Service"
-            / "Atlas.Service.exe",
+            / "SIDERON.Service"
+            / "SIDERON.Service.exe",
 
             # Emplacements prévus pour la future release.
             ROOT
-            / "Atlas.Service"
-            / "Atlas.Service.exe",
+            / "SIDERON.Service"
+            / "SIDERON.Service.exe",
 
             ROOT
-            / "Atlas.Service.exe",
+            / "SIDERON.Service.exe",
         ]
     )
 
@@ -261,7 +261,7 @@ def resolve_service_executable(
     )
 
     raise RuntimeError(
-        "Atlas.Service.exe autonome introuvable. "
+        "SIDERON.Service.exe autonome introuvable. "
         "Lance d'abord installer\\build_service.ps1 "
         "ou indique --service-exe.\\n"
         f"Emplacements verifies :\\n - {searched}"
@@ -287,13 +287,13 @@ def validate_service_executable(
     if result.returncode != 0:
 
         raise RuntimeError(
-            "L'auto-test de Atlas.Service.exe "
+            "L'auto-test de SIDERON.Service.exe "
             "a echoue "
             f"(code {result.returncode})."
         )
 
     print(
-        "Atlas.Service.exe valide :",
+        "SIDERON.Service.exe valide :",
         service_executable,
     )
 
@@ -309,7 +309,7 @@ def main(
     parser = argparse.ArgumentParser(
         description=(
             "Installation du service "
-            "privilégié Atlas V2."
+            "privilégié Sideron V2."
         )
     )
 
@@ -327,7 +327,7 @@ def main(
         default=None,
         help=(
             "Chemin explicite vers "
-            "Atlas.Service.exe autonome."
+            "SIDERON.Service.exe autonome."
         ),
     )
 
@@ -376,7 +376,7 @@ def main(
     )
 
     print(
-        "SID utilisateur Atlas :",
+        "SID utilisateur Sideron :",
         allowed_user_sid,
     )
 

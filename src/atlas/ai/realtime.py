@@ -178,7 +178,7 @@ class RealtimeManager:
                 ],
 
                 "instructions": (
-                    "Tu es Atlas, un assistant personnel "
+                    "Tu es Sideron, un assistant personnel "
                     "vocal pour Windows. "
                     "Réponds exclusivement en français. "
                     "Sois calme, précis, concis et "
@@ -188,7 +188,7 @@ class RealtimeManager:
                     "disponible via un outil, utilise cet outil. "
 
                     "Si l'utilisateur demande le mode vocal, le mode "
-                    "Discord ou une écoute uniquement après le mot Atlas, "
+                    "Discord ou une écoute uniquement après le mot Sideron, "
                     "utilise audio.set_listening_mode avec mode='wake_word'. "
                     "S'il demande le mode normal ou l'écoute continue, "
                     "utilise audio.set_listening_mode avec mode='continuous'. "
@@ -258,7 +258,7 @@ class RealtimeManager:
             )
 
             # Une erreur peut arriver entre response.create et
-            # response.created. Sans ce garde-fou, Atlas peut rester
+            # response.created. Sans ce garde-fou, Sideron peut rester
             # bloqué en pensant qu'une création de réponse est encore
             # en attente.
             if (
@@ -419,7 +419,7 @@ class RealtimeManager:
             self.audio_output.mark_response_done()
 
             # Il arrive qu'une réponse Realtime se termine sans aucun
-            # audio ni appel d'outil. Dans ce cas Atlas semblait ignorer
+            # audio ni appel d'outil. Dans ce cas Sideron semblait ignorer
             # l'utilisateur. On effectue une seule relance automatique.
             if not self._current_response_had_audio:
 
@@ -1058,7 +1058,7 @@ class RealtimeManager:
                 )
 
                 self.logger.info(
-                    "Interruption Atlas "
+                    "Interruption Sideron "
                     "(item=%s, joué=%d ms, "
                     "generation=%s, lecture=%s).",
                     item_id,
@@ -1071,7 +1071,7 @@ class RealtimeManager:
                 self.audio_output.clear()
 
                 # Empêche les derniers fragments réseau
-                # de refaire parler Atlas.
+                # de refaire parler Sideron.
                 if item_id is not None:
                     self._interrupted_item_ids.add(
                         item_id

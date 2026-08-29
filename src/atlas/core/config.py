@@ -9,15 +9,14 @@ class ConfigManager:
 
     DEFAULT_CONFIG_PATH = Path(
         "config"
-    ) / "atlas.json"
+    ) / "sideron.json"
 
-    ENV_CONFIG_PATH = (
-        "ATLAS_CONFIG_PATH"
-    )
+    ENV_CONFIG_PATH = "SIDERON_CONFIG_PATH"
+    LEGACY_ENV_CONFIG_PATH = "ATLAS_CONFIG_PATH"
 
     def __init__(
         self,
-        config_path: str = "config/atlas.json",
+        config_path: str = "config/sideron.json",
     ):
         self._requested_config_path = Path(
             config_path
@@ -151,18 +150,18 @@ class ConfigManager:
                 Path(
                     local_app_data
                 )
-                / "Atlas"
+                / "SIDERON"
                 / "config"
-                / "atlas.json"
+                / "sideron.json"
             )
 
         return (
             Path.home()
             / "AppData"
             / "Local"
-            / "Atlas"
+            / "SIDERON"
             / "config"
-            / "atlas.json"
+            / "sideron.json"
         )
 
     def save(self) -> None:
@@ -258,7 +257,7 @@ class ConfigManager:
         # 1. Chemin explicitement fourni par l'environnement.
         env_path = os.getenv(
             cls.ENV_CONFIG_PATH
-        )
+        ) or os.getenv(cls.LEGACY_ENV_CONFIG_PATH)
 
         if env_path:
             add(
@@ -291,12 +290,12 @@ class ConfigManager:
         # 4. Exécutable packagé PyInstaller.
         #
         # Distribution finale :
-        #   Atlas\
-        #     Atlas.exe
-        #     config\atlas.json
-        #     core\Atlas.Core.exe
+        #   Sideron\
+        #     SIDERON.exe
+        #     config\sideron.json
+        #     core\SIDERON.Core.exe
         #
-        # sys.executable pointe donc vers Atlas\core\Atlas.Core.exe.
+        # sys.executable pointe donc vers Sideron\core\SIDERON.Core.exe.
         if getattr(
             sys,
             "frozen",
@@ -324,7 +323,7 @@ class ConfigManager:
             )
 
         # 5. Développement depuis les sources :
-        # src/atlas/core/config.py -> racine Atlas à parents[3].
+        # src/atlas/core/config.py -> racine Sideron à parents[3].
         try:
 
             source_root = (
@@ -352,7 +351,7 @@ class ConfigManager:
         # 5. Racine d'installation standard de développement.
         add(
             Path(
-                r"C:\Atlas"
+                r"C:\SIDERON"
             )
             / requested_path
         )

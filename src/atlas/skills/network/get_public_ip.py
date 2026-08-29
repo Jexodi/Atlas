@@ -47,7 +47,7 @@ class GetPublicIpNetworkSkill(Skill):
             PUBLIC_IP_URL,
             headers={
                 "Accept": "application/json",
-                "User-Agent": "AtlasV2/1.0",
+                "User-Agent": "SideronV2/1.0",
             },
             method="GET",
         )

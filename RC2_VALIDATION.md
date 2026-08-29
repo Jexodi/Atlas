@@ -1,4 +1,4 @@
-# Atlas 3.3.5-rc.2 — Audio et mises à jour
+# Sideron 3.3.5-rc.2 — Audio et mises à jour
 
 ## Changements
 
@@ -42,7 +42,7 @@ Le test .NET contient 8 cas et utilise le véritable service avec un transport H
 
 1. Profil neuf : vérifier le micro par défaut Windows, puis enregistrer avec deux micros différents.
 2. Changer de micro pendant l'écoute, en modes continu et wake word ; vérifier la vraie source audio, pas seulement le libellé.
-3. Redémarrer Atlas/Core : vérifier le choix persistant. Modifier le canal puis le micro : vérifier que le canal reste conservé.
+3. Redémarrer Sideron/Core : vérifier le choix persistant. Modifier le canal puis le micro : vérifier que le canal reste conservé.
 4. Débrancher le micro mémorisé puis redémarrer : vérifier le repli et l'avertissement. Un branchement à chaud peut nécessiter un redémarrage du Core pour actualiser PortAudio.
 5. Simuler un micro occupé/incompatible : vérifier l'erreur et la reprise de l'ancien micro. Si aucun micro n'était disponible au lancement, brancher puis redémarrer le Core.
 6. RC sous la Release : téléchargement interdit. RC supérieure aux deux références : téléchargement proposé. Serveur Release indisponible : RC bloquée.

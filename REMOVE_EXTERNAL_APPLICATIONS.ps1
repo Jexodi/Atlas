@@ -1,11 +1,11 @@
 $ErrorActionPreference = "Stop"
 
-$AtlasRoot = "C:\Atlas"
+$SideronRoot = "C:\SIDERON"
 
 $FilesToRemove = @(
-    "ui-native\Atlas.UI\Services\ApplicationCatalogService.cs",
-    "ui-native\Atlas.UI\Services\ExternalApplicationHostService.cs",
-    "ui-native\Atlas.UI\Models\InstalledApplication.cs"
+    "ui-native\SIDERON.UI\Services\ApplicationCatalogService.cs",
+    "ui-native\SIDERON.UI\Services\ExternalApplicationHostService.cs",
+    "ui-native\SIDERON.UI\Models\InstalledApplication.cs"
 )
 
 Write-Host ""
@@ -13,7 +13,7 @@ Write-Host "Suppression du module Applications externes..."
 Write-Host ""
 
 foreach ($RelativePath in $FilesToRemove) {
-    $FullPath = Join-Path $AtlasRoot $RelativePath
+    $FullPath = Join-Path $SideronRoot $RelativePath
 
     if (Test-Path $FullPath) {
         Remove-Item $FullPath -Force

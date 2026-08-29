@@ -1,8 +1,8 @@
 from atlas.service.client import (
-    AtlasServiceClient,
-    AtlasServiceError,
-    AtlasServiceProtocolError,
-    AtlasServiceUnavailableError,
+    SideronServiceClient,
+    SideronServiceError,
+    SideronServiceProtocolError,
+    SideronServiceUnavailableError,
 )
 
 from atlas.service.protocol import (
@@ -16,10 +16,10 @@ from atlas.service.protocol import (
 
 
 __all__ = [
-    "AtlasServiceClient",
-    "AtlasServiceError",
-    "AtlasServiceProtocolError",
-    "AtlasServiceUnavailableError",
+    "SideronServiceClient",
+    "SideronServiceError",
+    "SideronServiceProtocolError",
+    "SideronServiceUnavailableError",
     "PIPE_ADDRESS",
     "PIPE_NAME",
     "PROTOCOL_VERSION",

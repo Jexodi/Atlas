@@ -21,7 +21,7 @@ class WindowContext:
 
 
 @dataclass(slots=True)
-class AtlasContext:
+class SideronContext:
     system: SystemContext = field(
         default_factory=SystemContext
     )

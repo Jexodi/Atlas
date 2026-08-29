@@ -84,7 +84,7 @@ class ListServicesSkill(Skill):
             return SkillResult(
                 success=False,
                 message=(
-                    "La gestion des services Atlas "
+                    "La gestion des services Sideron "
                     "est disponible uniquement sous Windows."
                 ),
             )

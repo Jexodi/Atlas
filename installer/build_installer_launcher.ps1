@@ -3,25 +3,25 @@
 $InstallerRoot = $PSScriptRoot
 $ProjectRoot = Resolve-Path (Join-Path $InstallerRoot "..")
 
-$LauncherRoot = Join-Path $InstallerRoot "Atlas.Setup.Launcher"
-$LauncherProject = Join-Path $LauncherRoot "Atlas.Setup.Launcher.csproj"
+$LauncherRoot = Join-Path $InstallerRoot "Sideron.Setup.Launcher"
+$LauncherProject = Join-Path $LauncherRoot "Sideron.Setup.Launcher.csproj"
 $PayloadZip = Join-Path $LauncherRoot "payload.zip"
 
-$ReleaseRoot = Join-Path $ProjectRoot "dist\Atlas"
+$ReleaseRoot = Join-Path $ProjectRoot "dist\SIDERON"
 $PayloadStage = Join-Path $ProjectRoot "build\installer-payload"
 $PayloadValidationRoot = Join-Path $ProjectRoot "build\installer-payload-validation"
 $PublishRoot = Join-Path $ProjectRoot "build\installer-launcher"
 
-$UpdateHostRoot = Join-Path $InstallerRoot "Atlas.UpdateHost"
-$UpdateHostProject = Join-Path $UpdateHostRoot "Atlas.UpdateHost.csproj"
+$UpdateHostRoot = Join-Path $InstallerRoot "Sideron.UpdateHost"
+$UpdateHostProject = Join-Path $UpdateHostRoot "Sideron.UpdateHost.csproj"
 $UpdateHostPublishRoot = Join-Path $ProjectRoot "build\update-host"
 $ProjectsOutputRoot = "D:\Jérémi\Documents\Projects"
 $ArchiveRoot = Join-Path $ProjectsOutputRoot "Archive"
-$VersionSourcePath = Join-Path $ProjectRoot "config\atlas.json"
+$VersionSourcePath = Join-Path $ProjectRoot "config\sideron.json"
 
 if (-not (Test-Path $VersionSourcePath))
 {
-    throw "Impossible de déterminer la version Atlas : config\atlas.json est introuvable."
+    throw "Impossible de déterminer la version Sideron : config\sideron.json est introuvable."
 }
 
 try
@@ -32,23 +32,23 @@ try
         -Encoding UTF8 `
         | ConvertFrom-Json
 
-    $AtlasBuildVersion = [string]$VersionConfig.atlas.version
+    $SideronBuildVersion = [string]$VersionConfig.sideron.version
 }
 catch
 {
-    throw "Impossible de lire la version Atlas depuis config\atlas.json."
+    throw "Impossible de lire la version Sideron depuis config\sideron.json."
 }
 
-if ([string]::IsNullOrWhiteSpace($AtlasBuildVersion))
+if ([string]::IsNullOrWhiteSpace($SideronBuildVersion))
 {
-    throw "La version Atlas est vide dans config\atlas.json."
+    throw "La version Sideron est vide dans config\sideron.json."
 }
 
-if ($AtlasBuildVersion -match "(?i)-dev(?:\.|$)")
+if ($SideronBuildVersion -match "(?i)-dev(?:\.|$)")
 {
     $BuildChannel = "DEV"
 }
-elseif ($AtlasBuildVersion -match "(?i)-rc(?:\.|$)")
+elseif ($SideronBuildVersion -match "(?i)-rc(?:\.|$)")
 {
     $BuildChannel = "RC"
 }
@@ -59,42 +59,42 @@ else
 
 $OutputRoot = Join-Path $ProjectsOutputRoot $BuildChannel
 $ArchiveChannelRoot = Join-Path $ArchiveRoot $BuildChannel
-$FinalSetupName = "Atlas-$AtlasBuildVersion.exe"
+$FinalSetupName = "Sideron-$SideronBuildVersion.exe"
 $FinalSetupExe = Join-Path $OutputRoot $FinalSetupName
 
-$UninstallLauncherRoot = Join-Path $InstallerRoot "Atlas.Uninstall.Launcher"
-$UninstallLauncherProject = Join-Path $UninstallLauncherRoot "Atlas.Uninstall.Launcher.csproj"
+$UninstallLauncherRoot = Join-Path $InstallerRoot "Sideron.Uninstall.Launcher"
+$UninstallLauncherProject = Join-Path $UninstallLauncherRoot "Sideron.Uninstall.Launcher.csproj"
 $UninstallPublishRoot = Join-Path $ProjectRoot "build\uninstall-launcher"
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host " Build Atlas.Setup.exe autonome" -ForegroundColor Cyan
+Write-Host " Build SIDERON.Setup.exe autonome" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 if (-not (Test-Path $LauncherProject))
 {
-    throw "Projet Atlas.Setup.Launcher introuvable : $LauncherProject"
+    throw "Projet SIDERON.Setup.Launcher introuvable : $LauncherProject"
 }
 
 if (-not (Test-Path $UninstallLauncherProject))
 {
-    throw "Projet Atlas.Uninstall.Launcher introuvable : $UninstallLauncherProject"
+    throw "Projet SIDERON.Uninstall.Launcher introuvable : $UninstallLauncherProject"
 }
 
 if (-not (Test-Path $UpdateHostProject))
 {
-    throw "Projet Atlas.UpdateHost introuvable : $UpdateHostProject"
+    throw "Projet Sideron.UpdateHost introuvable : $UpdateHostProject"
 }
 
 foreach ($Required in @(
-    (Join-Path $ReleaseRoot "Atlas.exe"),
-    (Join-Path $ReleaseRoot "core\Atlas.Core.exe"),
-    (Join-Path $ReleaseRoot "service\Atlas.Service.exe"),
+    (Join-Path $ReleaseRoot "SIDERON.exe"),
+    (Join-Path $ReleaseRoot "core\SIDERON.Core.exe"),
+    (Join-Path $ReleaseRoot "service\SIDERON.Service.exe"),
     (Join-Path $InstallerRoot "installer_gui.ps1"),
     (Join-Path $InstallerRoot "storage_partition.ps1"),
-    (Join-Path $InstallerRoot "install_atlas.ps1"),
-    (Join-Path $InstallerRoot "uninstall_atlas.ps1"),
-    (Join-Path $LauncherRoot "atlas.ico")
+    (Join-Path $InstallerRoot "install_sideron.ps1"),
+    (Join-Path $InstallerRoot "uninstall_sideron.ps1"),
+    (Join-Path $LauncherRoot "sideron.ico")
 ))
 {
     if (-not (Test-Path $Required))
@@ -133,10 +133,10 @@ if (-not (Test-Path $ArchiveChannelRoot))
         | Out-Null
 }
 
-$PreviousAtlasBuilds = @(
+$PreviousSideronBuilds = @(
     Get-ChildItem `
         -Path $OutputRoot `
-        -Filter "Atlas-*.exe" `
+        -Filter "Sideron-*.exe" `
         -File `
         -ErrorAction SilentlyContinue `
         | Where-Object {
@@ -144,20 +144,20 @@ $PreviousAtlasBuilds = @(
         }
 )
 
-foreach ($PreviousAtlasBuild in $PreviousAtlasBuilds)
+foreach ($PreviousSideronBuild in $PreviousSideronBuilds)
 {
     $ArchiveDestination = Join-Path `
         $ArchiveChannelRoot `
-        $PreviousAtlasBuild.Name
+        $PreviousSideronBuild.Name
 
     if (Test-Path $ArchiveDestination)
     {
         $ArchiveBaseName = [System.IO.Path]::GetFileNameWithoutExtension(
-            $PreviousAtlasBuild.Name
+            $PreviousSideronBuild.Name
         )
 
         $ArchiveExtension = [System.IO.Path]::GetExtension(
-            $PreviousAtlasBuild.Name
+            $PreviousSideronBuild.Name
         )
 
         $ArchiveTimestamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -174,13 +174,13 @@ foreach ($PreviousAtlasBuild in $PreviousAtlasBuilds)
 
     Write-Host (
         "Archivage de l'ancien build : " +
-        $PreviousAtlasBuild.Name +
+        $PreviousSideronBuild.Name +
         " -> " +
         $ArchiveDestination
     ) -ForegroundColor DarkGray
 
     Move-Item `
-        -Path $PreviousAtlasBuild.FullName `
+        -Path $PreviousSideronBuild.FullName `
         -Destination $ArchiveDestination `
         -Force `
         -ErrorAction Stop
@@ -196,8 +196,8 @@ Write-Host "1/6 - Préparation du payload..." -ForegroundColor Cyan
 foreach ($File in @(
     "installer_gui.ps1",
     "storage_partition.ps1",
-    "install_atlas.ps1",
-    "uninstall_atlas.ps1"
+    "install_sideron.ps1",
+    "uninstall_sideron.ps1"
 ))
 {
     Copy-Item `
@@ -207,13 +207,13 @@ foreach ($File in @(
 }
 
 Copy-Item `
-    (Join-Path $LauncherRoot "atlas.ico") `
-    (Join-Path $PayloadStage "atlas.ico") `
+    (Join-Path $LauncherRoot "sideron.ico") `
+    (Join-Path $PayloadStage "sideron.ico") `
     -Force
 
 Copy-Item `
     $ReleaseRoot `
-    (Join-Path $PayloadStage "Atlas") `
+    (Join-Path $PayloadStage "SIDERON") `
     -Recurse `
     -Force
 
@@ -230,18 +230,18 @@ dotnet publish `
 
 if ($LASTEXITCODE -ne 0)
 {
-    throw "La publication de Atlas.Uninstall.exe a échoué."
+    throw "La publication de SIDERON.Uninstall.exe a échoué."
 }
 
-$PublishedUninstallExe = Join-Path $UninstallPublishRoot "Atlas.Uninstall.exe"
+$PublishedUninstallExe = Join-Path $UninstallPublishRoot "SIDERON.Uninstall.exe"
 
 if (-not (Test-Path $PublishedUninstallExe))
 {
-    throw "Atlas.Uninstall.exe n'a pas été généré."
+    throw "SIDERON.Uninstall.exe n'a pas été généré."
 }
 
-$PayloadAtlasRoot = Join-Path $PayloadStage "Atlas"
-$PayloadInstallerRoot = Join-Path $PayloadAtlasRoot "installer"
+$PayloadSideronRoot = Join-Path $PayloadStage "SIDERON"
+$PayloadInstallerRoot = Join-Path $PayloadSideronRoot "installer"
 
 New-Item `
     -ItemType Directory `
@@ -251,15 +251,15 @@ New-Item `
 
 Copy-Item `
     $PublishedUninstallExe `
-    (Join-Path $PayloadAtlasRoot "Atlas.Uninstall.exe") `
+    (Join-Path $PayloadSideronRoot "SIDERON.Uninstall.exe") `
     -Force
 
 Copy-Item `
-    (Join-Path $InstallerRoot "uninstall_atlas.ps1") `
-    (Join-Path $PayloadInstallerRoot "uninstall_atlas.ps1") `
+    (Join-Path $InstallerRoot "uninstall_sideron.ps1") `
+    (Join-Path $PayloadInstallerRoot "uninstall_sideron.ps1") `
     -Force
 
-Write-Host "3/6 - Construction de Atlas.UpdateHost..." -ForegroundColor Cyan
+Write-Host "3/6 - Construction de Sideron.UpdateHost..." -ForegroundColor Cyan
 
 dotnet publish `
     $UpdateHostProject `
@@ -272,51 +272,51 @@ dotnet publish `
 
 if ($LASTEXITCODE -ne 0)
 {
-    throw "La publication de Atlas.UpdateHost.exe a échoué."
+    throw "La publication de Sideron.UpdateHost.exe a échoué."
 }
 
 $PublishedUpdateHostExe = Join-Path `
     $UpdateHostPublishRoot `
-    "Atlas.UpdateHost.exe"
+    "Sideron.UpdateHost.exe"
 
 if (-not (Test-Path $PublishedUpdateHostExe))
 {
-    throw "Atlas.UpdateHost.exe n'a pas été généré."
+    throw "Sideron.UpdateHost.exe n'a pas été généré."
 }
 
 Copy-Item `
     $PublishedUpdateHostExe `
-    (Join-Path $PayloadStage "Atlas.UpdateHost.exe") `
+    (Join-Path $PayloadStage "Sideron.UpdateHost.exe") `
     -Force
 
 Copy-Item `
-    (Join-Path $LauncherRoot "atlas.ico") `
-    (Join-Path $PayloadStage "atlas.ico") `
+    (Join-Path $LauncherRoot "sideron.ico") `
+    (Join-Path $PayloadStage "sideron.ico") `
     -Force
 
 Write-Host "Génération du manifeste d'intégrité SHA-256..." -ForegroundColor Cyan
 
 $IntegrityManifestPath = Join-Path `
-    $PayloadAtlasRoot `
+    $PayloadSideronRoot `
     "integrity.sha256.json"
 
 $IntegrityEntries = @()
 
 $IntegrityFiles = Get-ChildItem `
-    -Path $PayloadAtlasRoot `
+    -Path $PayloadSideronRoot `
     -File `
     -Recurse `
     -ErrorAction Stop `
     | Where-Object {
         $_.FullName -ne $IntegrityManifestPath `
-        -and $_.FullName -ne (Join-Path $PayloadAtlasRoot "config\atlas.json")
+        -and $_.FullName -ne (Join-Path $PayloadSideronRoot "config\sideron.json")
     } `
     | Sort-Object FullName
 
 foreach ($IntegrityFile in $IntegrityFiles)
 {
     $RelativePath = $IntegrityFile.FullName.Substring(
-        $PayloadAtlasRoot.Length
+        $PayloadSideronRoot.Length
     ).TrimStart(
         [System.IO.Path]::DirectorySeparatorChar,
         [System.IO.Path]::AltDirectorySeparatorChar
@@ -344,7 +344,7 @@ $IntegrityManifest = [PSCustomObject]@{
     generated_utc = [DateTime]::UtcNow.ToString("o")
     excluded = @(
         "integrity.sha256.json",
-        "config/atlas.json"
+        "config/sideron.json"
     )
     files = $IntegrityEntries
 }
@@ -360,7 +360,7 @@ $IntegrityJson = $IntegrityManifest `
 
 if (-not (Test-Path $IntegrityManifestPath))
 {
-    throw "Le manifeste d'intégrité Atlas n'a pas été généré."
+    throw "Le manifeste d'intégrité Sideron n'a pas été généré."
 }
 
 $IntegrityCountMessage = "Manifeste SHA-256 : $($IntegrityEntries.Count) fichiers protégés."
@@ -403,12 +403,12 @@ finally
 }
 
 $SourceInstallerHash = Get-FileHash `
-    -Path (Join-Path $InstallerRoot "install_atlas.ps1") `
+    -Path (Join-Path $InstallerRoot "install_sideron.ps1") `
     -Algorithm SHA256 `
     -ErrorAction Stop
 
 $EmbeddedInstallerHash = Get-FileHash `
-    -Path (Join-Path $PayloadValidationRoot "install_atlas.ps1") `
+    -Path (Join-Path $PayloadValidationRoot "install_sideron.ps1") `
     -Algorithm SHA256 `
     -ErrorAction Stop
 
@@ -416,7 +416,7 @@ if ($SourceInstallerHash.Hash -ne $EmbeddedInstallerHash.Hash)
 {
     throw (
         "Le payload de l'installateur contient une ancienne version " +
-        "de install_atlas.ps1. Build interrompu."
+        "de install_sideron.ps1. Build interrompu."
     )
 }
 
@@ -427,7 +427,7 @@ Remove-Item `
 
 Write-Host "Validation du moteur de mise à jour embarqué : OK" -ForegroundColor Green
 
-Write-Host "5/6 - Publication de Atlas.Setup.exe..." -ForegroundColor Cyan
+Write-Host "5/6 - Publication de SIDERON.Setup.exe..." -ForegroundColor Cyan
 
 dotnet publish `
     $LauncherProject `
@@ -440,14 +440,14 @@ dotnet publish `
 
 if ($LASTEXITCODE -ne 0)
 {
-    throw "La publication de Atlas.Setup.exe a échoué."
+    throw "La publication de SIDERON.Setup.exe a échoué."
 }
 
-$PublishedSetupExe = Join-Path $PublishRoot "Atlas.Setup.exe"
+$PublishedSetupExe = Join-Path $PublishRoot "SIDERON.Setup.exe"
 
 if (-not (Test-Path $PublishedSetupExe))
 {
-    throw "Atlas.Setup.exe n'a pas été généré."
+    throw "SIDERON.Setup.exe n'a pas été généré."
 }
 
 Write-Host "6/6 - Assemblage final..." -ForegroundColor Cyan

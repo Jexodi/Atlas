@@ -183,7 +183,7 @@ class WindowsNamedPipeClient:
         if os.name != "nt":
 
             raise PipeClientError(
-                "AtlasService est disponible "
+                "SideronService est disponible "
                 "uniquement sous Windows."
             )
 
@@ -263,7 +263,7 @@ class WindowsNamedPipeClient:
 
                 raise PipeAccessDeniedError(
                     "Accès refusé au Named Pipe "
-                    "AtlasService."
+                    "SideronService."
                 )
 
             # =================================================
@@ -283,7 +283,7 @@ class WindowsNamedPipeClient:
                 if remaining <= 0:
 
                     raise PipeUnavailableError(
-                        "AtlasService est occupé "
+                        "SideronService est occupé "
                         "ou ne répond pas."
                     )
 
@@ -317,7 +317,7 @@ class WindowsNamedPipeClient:
                 ):
 
                     raise PipeUnavailableError(
-                        "AtlasService n'est pas "
+                        "SideronService n'est pas "
                         "disponible."
                     )
 
@@ -329,7 +329,7 @@ class WindowsNamedPipeClient:
 
             raise PipeClientError(
                 "Impossible de se connecter "
-                "à AtlasService : "
+                "à SideronService : "
                 f"{ctypes.WinError(error)}"
             )
 
@@ -346,7 +346,7 @@ class WindowsNamedPipeClient:
         if len(payload) > MAX_MESSAGE_SIZE:
 
             raise PipeClientError(
-                "Message AtlasService "
+                "Message SideronService "
                 "trop volumineux."
             )
 
@@ -374,7 +374,7 @@ class WindowsNamedPipeClient:
 
             raise PipeClientError(
                 "Échec d'écriture dans "
-                "AtlasService : "
+                "SideronService : "
                 f"{ctypes.WinError(ctypes.get_last_error())}"
             )
 
@@ -384,7 +384,7 @@ class WindowsNamedPipeClient:
         ):
 
             raise PipeClientError(
-                "Message AtlasService "
+                "Message SideronService "
                 "partiellement envoyé."
             )
 
@@ -433,13 +433,13 @@ class WindowsNamedPipeClient:
             ):
 
                 raise PipeClientError(
-                    "Réponse AtlasService "
+                    "Réponse SideronService "
                     "trop volumineuse."
                 )
 
             raise PipeClientError(
                 "Échec de lecture depuis "
-                "AtlasService : "
+                "SideronService : "
                 f"{ctypes.WinError(error)}"
             )
 

@@ -1,9 +1,9 @@
 from atlas.storage.manager import (
-    AtlasStorage,
-    AtlasStorageError,
-    AtlasStorageNotFoundError,
-    AtlasStoragePermissionError,
-    AtlasStorageUnsupportedFileError,
+    SideronStorage,
+    SideronStorageError,
+    SideronStorageNotFoundError,
+    SideronStoragePermissionError,
+    SideronStorageUnsupportedFileError,
 )
 
 from atlas.storage.models import (
@@ -13,11 +13,11 @@ from atlas.storage.models import (
 
 
 __all__ = [
-    "AtlasStorage",
-    "AtlasStorageError",
-    "AtlasStorageNotFoundError",
-    "AtlasStoragePermissionError",
-    "AtlasStorageUnsupportedFileError",
+    "SideronStorage",
+    "SideronStorageError",
+    "SideronStorageNotFoundError",
+    "SideronStoragePermissionError",
+    "SideronStorageUnsupportedFileError",
     "ImportResult",
     "StorageEntry",
 ]

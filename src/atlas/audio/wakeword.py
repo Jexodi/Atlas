@@ -34,7 +34,7 @@ class WindowsSpeechWakeWordDetector(
     def __init__(
         self,
         logger,
-        wake_word: str = "Atlas",
+        wake_word: str = "SIDERON",
         culture: str = "fr-FR",
         min_confidence: float = 0.55,
         startup_timeout_seconds: float = 8.0,
@@ -100,7 +100,7 @@ class WindowsSpeechWakeWordDetector(
     ) -> bool:
 
         # Windows Speech utilise directement le micro par defaut.
-        # Les echantillons du pipeline Atlas ne sont pas envoyes
+        # Les echantillons du pipeline Sideron ne sont pas envoyes
         # au worker et ne quittent pas le PC.
         del samples
         del sample_rate
@@ -197,7 +197,7 @@ class WindowsSpeechWakeWordDetector(
 
         self._reader_thread = threading.Thread(
             target=self._reader_loop,
-            name="AtlasWindowsWakeWord",
+            name="SideronWindowsWakeWord",
             daemon=True,
         )
         self._reader_thread.start()
@@ -412,7 +412,7 @@ def create_wake_word_detector(
             logger=logger,
             wake_word=config.get(
                 "audio.wake_word.word",
-                "Atlas",
+                "SIDERON",
             ),
             culture=config.get(
                 "audio.wake_word.culture",

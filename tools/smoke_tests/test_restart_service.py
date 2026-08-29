@@ -1,6 +1,6 @@
 from atlas.service import (
-    AtlasServiceClient,
-    AtlasServiceError,
+    SideronServiceClient,
+    SideronServiceError,
 )
 
 
@@ -13,7 +13,7 @@ def main() -> None:
     print()
 
     client = (
-        AtlasServiceClient()
+        SideronServiceClient()
     )
 
     service_name = "Spooler"
@@ -33,10 +33,10 @@ def main() -> None:
             )
         )
 
-    except AtlasServiceError as exc:
+    except SideronServiceError as exc:
 
         print(
-            "❌ Erreur AtlasService :",
+            "❌ Erreur SideronService :",
             exc,
         )
 
@@ -73,7 +73,7 @@ def main() -> None:
     else:
 
         print(
-            "❌ AtlasService a refusé ou échoué "
+            "❌ SideronService a refusé ou échoué "
             "pendant le redémarrage."
         )
 

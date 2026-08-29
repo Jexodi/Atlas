@@ -53,13 +53,13 @@ class RealtimeToolRouter:
         ) = None
 
         # Nom exposé à OpenAI
-        # -> nom réel Atlas
+        # -> nom réel Sideron
         self._tool_to_skill: dict[
             str,
             str,
         ] = {}
 
-        # Nom Atlas
+        # Nom Sideron
         # -> nom exposé OpenAI
         self._skill_to_tool: dict[
             str,
@@ -97,7 +97,7 @@ class RealtimeToolRouter:
         self._skill_to_tool.clear()
 
         # =================================================
-        # Skills Atlas
+        # Skills Sideron
         # =================================================
 
         for skill in self.registry.list_skills():
@@ -163,11 +163,11 @@ class RealtimeToolRouter:
                 "type": "function",
                 "name": "atlas_confirm_action",
                 "description": (
-                    "Confirme une action Atlas en attente. "
+                    "Confirme une action Sideron en attente. "
                     "Utiliser uniquement si l'utilisateur "
                     "vient de confirmer explicitement cette "
                     "action. Utiliser exactement le "
-                    "confirmation_id fourni par Atlas."
+                    "confirmation_id fourni par Sideron."
                 ),
                 "parameters": {
                     "type": "object",
@@ -193,7 +193,7 @@ class RealtimeToolRouter:
                 "type": "function",
                 "name": "atlas_cancel_action",
                 "description": (
-                    "Annule l'action Atlas actuellement "
+                    "Annule l'action Sideron actuellement "
                     "en attente lorsque l'utilisateur refuse "
                     "explicitement son exécution."
                 ),

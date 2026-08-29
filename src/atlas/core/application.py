@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from atlas.core.config import ConfigManager
 from atlas.core.event_bus import EventBus
 from atlas.core.logger import setup_logger
-from atlas.core.state import AtlasState
+from atlas.core.state import SideronState
 
 from atlas.security.permissions import PermissionMode
 from atlas.security.policy import PermissionEngine
@@ -15,14 +15,14 @@ from atlas.skills.registry import SkillRegistry
 from atlas.skills.manager import SkillManager
 
 from atlas.service import (
-    AtlasServiceClient,
+    SideronServiceClient,
 )
 
 from atlas.skills.catalog import (
     register_default_skills,
 )
 
-from atlas.storage import AtlasStorage
+from atlas.storage import SideronStorage
 
 from atlas.context.manager import ContextManager
 from atlas.core.lifecycle import LifecycleManager
@@ -35,10 +35,10 @@ from atlas.skills.audio.set_listening_mode import (
 )
 from atlas.ai.tool_router import RealtimeToolRouter
 
-from atlas.ipc import AtlasTelemetryPublisher, AtlasUiBridge
+from atlas.ipc import SideronTelemetryPublisher, SideronUiBridge
 
 
-class AtlasApplication:
+class SideronApplication:
 
     def __init__(
         self,
@@ -50,7 +50,7 @@ class AtlasApplication:
 
         self.events = EventBus()
 
-        self.state = AtlasState()
+        self.state = SideronState()
 
         self.permissions = (
             PermissionEngine()
@@ -64,7 +64,7 @@ class AtlasApplication:
         self.storage = None
 
         self.service_client = (
-            AtlasServiceClient(
+            SideronServiceClient(
                 logger=self.logger,
             )
         )
@@ -89,7 +89,7 @@ class AtlasApplication:
             audio_output=self.audio.output,
         )
 
-        self.ui_bridge = AtlasUiBridge(
+        self.ui_bridge = SideronUiBridge(
             event_bus=self.events,
             logger=self.logger,
             state_provider=(
@@ -97,7 +97,7 @@ class AtlasApplication:
             ),
         )
 
-        self.telemetry = AtlasTelemetryPublisher(
+        self.telemetry = SideronTelemetryPublisher(
             ui_bridge=self.ui_bridge,
             logger=self.logger,
             storage_root_provider=(
@@ -110,7 +110,7 @@ class AtlasApplication:
     ) -> None:
 
         self.logger.info(
-            "Initialisation d'Atlas V2..."
+            "Initialisation d'Sideron V2..."
         )
 
         load_dotenv()
@@ -123,17 +123,17 @@ class AtlasApplication:
 
         storage_root = self.config.get(
             "storage.root",
-            r"C:\Atlas",
+            r"C:\SIDERON",
         )
 
-        self.storage = AtlasStorage(
+        self.storage = SideronStorage(
             storage_root
         )
 
         self.storage.initialize()
 
         self.logger.info(
-            "Zone Atlas initialisée : %s",
+            "Zone Sideron initialisée : %s",
             self.storage.get_root(),
         )
 
@@ -374,7 +374,7 @@ class AtlasApplication:
         )
 
         self.logger.info(
-            "Atlas V2 prêt."
+            "Sideron V2 prêt."
         )
 
     async def shutdown(
@@ -382,7 +382,7 @@ class AtlasApplication:
     ) -> None:
 
         self.logger.info(
-            "Arrêt d'Atlas..."
+            "Arrêt d'Sideron..."
         )
 
         self.state.status = (
@@ -404,7 +404,7 @@ class AtlasApplication:
         self.state.running = False
 
         self.logger.info(
-            "Atlas arrêté."
+            "Sideron arrêté."
         )
 
     def _send_listening_state(
@@ -429,7 +429,7 @@ class AtlasApplication:
                 "voice_session_active": (
                     voice_session_active
                 ),
-                "wake_word": "Atlas",
+                "wake_word": "SIDERON",
             },
         )
 
@@ -749,7 +749,7 @@ class AtlasApplication:
         self.config.save()
 
         self.logger.info(
-            "Mode de permissions Atlas modifié depuis l'UI : %s",
+            "Mode de permissions Sideron modifié depuis l'UI : %s",
             requested_mode.value,
         )
 
@@ -854,7 +854,7 @@ class AtlasApplication:
         self._send_listening_state()
 
         self.logger.info(
-            "Session vocale Atlas activée."
+            "Session vocale Sideron activée."
         )
 
     def _on_voice_session_closed(
@@ -874,7 +874,7 @@ class AtlasApplication:
         self._send_listening_state()
 
         self.logger.info(
-            "Session vocale Atlas fermée."
+            "Session vocale Sideron fermée."
         )
 
     def _on_listening_mode_changed(

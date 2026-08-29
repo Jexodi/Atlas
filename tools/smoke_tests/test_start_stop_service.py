@@ -1,6 +1,6 @@
 from atlas.service import (
-    AtlasServiceClient,
-    AtlasServiceError,
+    SideronServiceClient,
+    SideronServiceError,
 )
 
 
@@ -41,7 +41,7 @@ def show_response(
 def main() -> None:
 
     client = (
-        AtlasServiceClient()
+        SideronServiceClient()
     )
 
     print()
@@ -87,11 +87,11 @@ def main() -> None:
             start_response,
         )
 
-    except AtlasServiceError as exc:
+    except SideronServiceError as exc:
 
         print()
         print(
-            "❌ AtlasService error :",
+            "❌ SideronService error :",
             exc,
         )
 

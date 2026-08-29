@@ -1,7 +1,7 @@
 [project]
-name = "atlas"
-version = "3.3.5-rc.4"
-description = "Atlas V2 - Assistant personnel intelligent pour Windows"
+name = "sideron"
+version = "3.3.6"
+description = "SIDERON - System for Intelligent Dialogue, Execution, Reasoning, Operations and Navigation"
 requires-python = ">=3.12"
 
 dependencies = [

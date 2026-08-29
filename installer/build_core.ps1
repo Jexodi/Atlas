@@ -1,10 +1,10 @@
 ﻿$ErrorActionPreference = "Stop"
 
-$AtlasRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
-$Python = Join-Path $AtlasRoot ".venv\Scripts\python.exe"
-$Spec = Join-Path $PSScriptRoot "atlas_core.spec"
-$BuildRoot = Join-Path $AtlasRoot "build\core-package"
-$DistRoot = Join-Path $AtlasRoot "build\core-dist"
+$SideronRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$Python = Join-Path $SideronRoot ".venv\Scripts\python.exe"
+$Spec = Join-Path $PSScriptRoot "sideron_core.spec"
+$BuildRoot = Join-Path $SideronRoot "build\core-package"
+$DistRoot = Join-Path $SideronRoot "build\core-dist"
 
 if (-not (Test-Path $Python))
 {
@@ -33,11 +33,11 @@ if (Test-Path $DistRoot)
     Remove-Item $DistRoot -Recurse -Force
 }
 
-Push-Location $AtlasRoot
+Push-Location $SideronRoot
 
 try
 {
-    Write-Host "Packaging Atlas Core..." -ForegroundColor Cyan
+    Write-Host "Packaging Sideron Core..." -ForegroundColor Cyan
 
     $PyInstallerStdOut = [System.IO.Path]::GetTempFileName()
     $PyInstallerStdErr = [System.IO.Path]::GetTempFileName()
@@ -114,19 +114,19 @@ finally
     Pop-Location
 }
 
-$CoreRoot = Join-Path $DistRoot "Atlas.Core"
-$CoreExe = Join-Path $CoreRoot "Atlas.Core.exe"
+$CoreRoot = Join-Path $DistRoot "SIDERON.Core"
+$CoreExe = Join-Path $CoreRoot "SIDERON.Core.exe"
 $CoreInternal = Join-Path $CoreRoot "_internal"
 $CoreBaseLibrary = Join-Path $CoreInternal "base_library.zip"
 
 if (-not (Test-Path $CoreExe))
 {
-    throw "Atlas.Core.exe n'a pas ete genere."
+    throw "SIDERON.Core.exe n'a pas ete genere."
 }
 
 if (-not (Test-Path $CoreInternal))
 {
-    throw "Le dossier runtime Atlas.Core\\_internal n'a pas ete genere."
+    throw "Le dossier runtime SIDERON.Core\\_internal n'a pas ete genere."
 }
 
 # PyInstaller doit normalement produire base_library.zip pour un build
@@ -142,7 +142,7 @@ if (-not (Test-Path $CoreBaseLibrary))
     Write-Host ""
     Write-Host "base_library.zip absent du Core ; reconstruction du runtime Python de base..." -ForegroundColor Yellow
 
-    $BootstrapRoot = Join-Path $AtlasRoot "build\\core-bootstrap-library"
+    $BootstrapRoot = Join-Path $SideronRoot "build\\core-bootstrap-library"
     $BootstrapWork = Join-Path $BootstrapRoot "work"
     $BootstrapDist = Join-Path $BootstrapRoot "dist"
     $BootstrapScript = Join-Path $BootstrapRoot "bootstrap.py"
@@ -178,7 +178,7 @@ if (-not (Test-Path $CoreBaseLibrary))
             "--clean",
             "--onedir",
             "--name",
-            "Atlas.Core.Bootstrap",
+            "SIDERON.Core.Bootstrap",
             "--workpath",
             $BootstrapWork,
             "--distpath",
@@ -224,7 +224,7 @@ if (-not (Test-Path $CoreBaseLibrary))
 
         $BootstrapBaseLibrary = Join-Path `
             $BootstrapDist `
-            "Atlas.Core.Bootstrap\\_internal\\base_library.zip"
+            "SIDERON.Core.Bootstrap\\_internal\\base_library.zip"
 
         if (-not (Test-Path $BootstrapBaseLibrary))
         {
@@ -236,7 +236,7 @@ if (-not (Test-Path $CoreBaseLibrary))
             -Destination $CoreBaseLibrary `
             -Force
 
-        Write-Host "base_library.zip restaure dans Atlas.Core\\_internal." -ForegroundColor Green
+        Write-Host "base_library.zip restaure dans SIDERON.Core\\_internal." -ForegroundColor Green
     }
     finally
     {
@@ -288,7 +288,7 @@ if ($LASTEXITCODE -ne 0)
 }
 
 Write-Host ""
-Write-Host "Atlas.Core genere et runtime Python valide :" -ForegroundColor Green
+Write-Host "SIDERON.Core genere et runtime Python valide :" -ForegroundColor Green
 Write-Host "Executable   : $CoreExe"
 Write-Host "Python DLL   : $($CorePythonDll.FullName)"
 Write-Host "Base library : $CoreBaseLibrary"

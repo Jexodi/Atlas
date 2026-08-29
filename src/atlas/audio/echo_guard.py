@@ -80,7 +80,7 @@ class EchoGuard:
         microphone_samples: np.ndarray,
     ) -> bool:
 
-        # Pas de sortie Atlas récente.
+        # Pas de sortie Sideron récente.
         if (
             time.monotonic()
             - self._last_reference_time

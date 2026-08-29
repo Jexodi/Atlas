@@ -24,10 +24,12 @@ src/*.egg-info/
 
 config/secrets.json
 .env
+.sideron-version-backups/
 .atlas-version-backups/
 
 # Private relay access: never publish generated activations or server secrets.
 Activer-*.ps1
 access.bin
+sideron-api.env
 atlas-api.env
 access.sqlite3*

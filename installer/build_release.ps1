@@ -1,26 +1,26 @@
 ﻿$ErrorActionPreference = "Stop"
 
-$AtlasRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
-$Python = Join-Path $AtlasRoot ".venv\Scripts\python.exe"
+$SideronRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$Python = Join-Path $SideronRoot ".venv\Scripts\python.exe"
 
-$UiProject = Join-Path $AtlasRoot "ui-native\Atlas.UI"
+$UiProject = Join-Path $SideronRoot "ui-native\Sideron.UI"
 $UiPublish = Join-Path $UiProject "bin\publish\win-x64"
 
-$CoreDist = Join-Path $AtlasRoot "build\core-dist\Atlas.Core"
+$CoreDist = Join-Path $SideronRoot "build\core-dist\SIDERON.Core"
 
 # IMPORTANT :
-# AtlasV2Service peut être en cours d'exécution depuis build\service-dist.
+# SIDERONService peut être en cours d'exécution depuis build\service-dist.
 # La release utilise donc des dossiers dédiés afin de ne jamais toucher
 # aux fichiers chargés par le service Windows actif.
-$ServiceReleaseBuildRoot = Join-Path $AtlasRoot "build\release-service-package"
-$ServiceReleaseDistRoot = Join-Path $AtlasRoot "build\release-service-dist"
-$ServiceDist = Join-Path $ServiceReleaseDistRoot "Atlas.Service"
+$ServiceReleaseBuildRoot = Join-Path $SideronRoot "build\release-service-package"
+$ServiceReleaseDistRoot = Join-Path $SideronRoot "build\release-service-dist"
+$ServiceDist = Join-Path $ServiceReleaseDistRoot "SIDERON.Service"
 
-$ReleaseRoot = Join-Path $AtlasRoot "dist\Atlas"
+$ReleaseRoot = Join-Path $SideronRoot "dist\SIDERON"
 $ReleaseCore = Join-Path $ReleaseRoot "core"
 $ReleaseService = Join-Path $ReleaseRoot "service"
 
-Write-Host "=== Atlas Release Builder ===" -ForegroundColor Cyan
+Write-Host "=== Sideron Release Builder ===" -ForegroundColor Cyan
 Write-Host ""
 
 Write-Host "1/4 - Packaging Core Python..." -ForegroundColor Cyan
@@ -32,18 +32,18 @@ if ($LASTEXITCODE -ne 0)
 }
 
 Write-Host ""
-Write-Host "2/4 - Packaging AtlasService autonome..." -ForegroundColor Cyan
+Write-Host "2/4 - Packaging SideronService autonome..." -ForegroundColor Cyan
 & (Join-Path $PSScriptRoot "build_service.ps1") `
     -BuildRoot $ServiceReleaseBuildRoot `
     -DistRoot $ServiceReleaseDistRoot
 
 if ($LASTEXITCODE -ne 0)
 {
-    throw "Le packaging de AtlasService a echoue."
+    throw "Le packaging de SideronService a echoue."
 }
 
 Write-Host ""
-Write-Host "3/4 - Publication Atlas UI..." -ForegroundColor Cyan
+Write-Host "3/4 - Publication Sideron UI..." -ForegroundColor Cyan
 & (Join-Path $UiProject "publish.ps1")
 
 if ($LASTEXITCODE -ne 0)
@@ -75,7 +75,7 @@ New-Item `
     | Out-Null
 
 Write-Host ""
-Write-Host "4/4 - Assemblage dist\Atlas..." -ForegroundColor Cyan
+Write-Host "4/4 - Assemblage dist\SIDERON..." -ForegroundColor Cyan
 
 Copy-Item `
     (Join-Path $UiPublish "*") `
@@ -100,7 +100,7 @@ foreach ($Folder in @(
     "assets"
 ))
 {
-    $Source = Join-Path $AtlasRoot $Folder
+    $Source = Join-Path $SideronRoot $Folder
 
     if (Test-Path $Source)
     {
@@ -112,9 +112,9 @@ foreach ($Folder in @(
     }
 }
 
-$AtlasExe = Join-Path $ReleaseRoot "Atlas.exe"
-$CoreExe = Join-Path $ReleaseCore "Atlas.Core.exe"
-$ServiceExe = Join-Path $ReleaseService "Atlas.Service.exe"
+$SideronExe = Join-Path $ReleaseRoot "SIDERON.exe"
+$CoreExe = Join-Path $ReleaseCore "SIDERON.Core.exe"
+$ServiceExe = Join-Path $ReleaseService "SIDERON.Service.exe"
 $CoreBaseLibrary = Join-Path $ReleaseCore "_internal\base_library.zip"
 $CorePythonDll = Get-ChildItem `
     -Path (Join-Path $ReleaseCore "_internal") `
@@ -126,14 +126,14 @@ $CorePythonDll = Get-ChildItem `
     } `
     | Select-Object -First 1
 
-if (-not (Test-Path $AtlasExe))
+if (-not (Test-Path $SideronExe))
 {
-    throw "Atlas.exe est absent du dossier de distribution."
+    throw "SIDERON.exe est absent du dossier de distribution."
 }
 
 if (-not (Test-Path $CoreExe))
 {
-    throw "Atlas.Core.exe est absent du dossier de distribution."
+    throw "SIDERON.Core.exe est absent du dossier de distribution."
 }
 
 if (-not (Test-Path $CoreBaseLibrary))
@@ -154,17 +154,17 @@ if ($LASTEXITCODE -ne 0)
 }
 
 Write-Host ""
-Write-Host "Validation runtime Atlas.Core de la release : OK" -ForegroundColor Green
+Write-Host "Validation runtime SIDERON.Core de la release : OK" -ForegroundColor Green
 Write-Host "Base library : $CoreBaseLibrary"
 Write-Host "Python DLL   : $($CorePythonDll.FullName)"
 
 if (-not (Test-Path $ServiceExe))
 {
-    throw "Atlas.Service.exe est absent du dossier de distribution."
+    throw "SIDERON.Service.exe est absent du dossier de distribution."
 }
 
 Write-Host ""
-Write-Host "Validation Atlas.Service.exe de la release..." -ForegroundColor Cyan
+Write-Host "Validation SIDERON.Service.exe de la release..." -ForegroundColor Cyan
 
 $ServiceSelfTest = Start-Process `
     -FilePath $ServiceExe `
@@ -174,17 +174,17 @@ $ServiceSelfTest = Start-Process `
 
 if ($ServiceSelfTest.ExitCode -ne 0)
 {
-    throw "L'auto-test du Atlas.Service.exe de la release a echoue avec le code $($ServiceSelfTest.ExitCode)."
+    throw "L'auto-test du SIDERON.Service.exe de la release a echoue avec le code $($ServiceSelfTest.ExitCode)."
 }
 
 Write-Host ""
-Write-Host "Distribution portable Atlas complete :" -ForegroundColor Green
+Write-Host "Distribution portable Sideron complete :" -ForegroundColor Green
 Write-Host $ReleaseRoot
 Write-Host ""
 Write-Host "Executables principaux :" -ForegroundColor Green
-Write-Host "UI      : $AtlasExe"
+Write-Host "UI      : $SideronExe"
 Write-Host "Core    : $CoreExe"
 Write-Host "Service : $ServiceExe"
 Write-Host ""
-Write-Host "AtlasService n'est pas installe automatiquement par ce build." -ForegroundColor DarkGray
+Write-Host "SideronService n'est pas installe automatiquement par ce build." -ForegroundColor DarkGray
 Write-Host "L'installation Windows complete sera ajoutee a l'etape installateur." -ForegroundColor DarkGray

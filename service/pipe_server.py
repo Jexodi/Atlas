@@ -157,7 +157,7 @@ class PipeServerError(
 # =========================================================
 
 
-class AtlasPipeServer:
+class SideronPipeServer:
 
     def __init__(
         self,
@@ -169,7 +169,7 @@ class AtlasPipeServer:
         if os.name != "nt":
 
             raise PipeServerError(
-                "AtlasService fonctionne "
+                "SideronService fonctionne "
                 "uniquement sous Windows."
             )
 
@@ -234,7 +234,7 @@ class AtlasPipeServer:
 
             raise PipeServerError(
                 "Impossible de créer le "
-                "Named Pipe AtlasService : "
+                "Named Pipe SideronService : "
                 f"{ctypes.WinError(ctypes.get_last_error())}"
             )
 
@@ -273,7 +273,7 @@ class AtlasPipeServer:
 
         raise PipeServerError(
             "Impossible d'accepter le client "
-            "Atlas : "
+            "Sideron : "
             f"{ctypes.WinError(error)}"
         )
 
@@ -322,7 +322,7 @@ class AtlasPipeServer:
             ):
 
                 raise PipeServerError(
-                    "Requête Atlas trop volumineuse."
+                    "Requête Sideron trop volumineuse."
                 )
 
             raise PipeServerError(
@@ -352,7 +352,7 @@ class AtlasPipeServer:
         ):
 
             raise PipeServerError(
-                "Réponse AtlasService "
+                "Réponse SideronService "
                 "trop volumineuse."
             )
 
@@ -389,7 +389,7 @@ class AtlasPipeServer:
         ):
 
             raise PipeServerError(
-                "Réponse AtlasService "
+                "Réponse SideronService "
                 "partiellement transmise."
             )
 

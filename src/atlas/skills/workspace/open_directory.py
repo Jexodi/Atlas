@@ -10,8 +10,8 @@ from atlas.skills.base import (
     SkillValidationError,
 )
 from atlas.storage import (
-    AtlasStorage,
-    AtlasStorageError,
+    SideronStorage,
+    SideronStorageError,
 )
 
 
@@ -20,10 +20,10 @@ class OpenWorkspaceDirectorySkill(Skill):
     name = "workspace.open_directory"
 
     description = (
-        "Affiche un dossier existant de la zone Atlas dans "
-        "l'interface Workspace d'Atlas. "
-        "Le chemin doit être relatif à la zone Atlas. "
-        "Exemples : Documents, Projects, Imports ou Projects/Atlas."
+        "Affiche un dossier existant de la zone Sideron dans "
+        "l'interface Workspace d'Sideron. "
+        "Le chemin doit être relatif à la zone Sideron. "
+        "Exemples : Documents, Projects, Imports ou Projects/SIDERON."
     )
 
     risk_level = RiskLevel.READ_ONLY
@@ -39,7 +39,7 @@ class OpenWorkspaceDirectorySkill(Skill):
                 "type": "string",
                 "description": (
                     "Chemin relatif du dossier à afficher dans "
-                    "l'interface Atlas. Exemple : Projects/Atlas"
+                    "l'interface Sideron. Exemple : Projects/SIDERON"
                 ),
             },
         },
@@ -51,7 +51,7 @@ class OpenWorkspaceDirectorySkill(Skill):
 
     def __init__(
         self,
-        storage: AtlasStorage,
+        storage: SideronStorage,
         event_bus: EventBus,
     ) -> None:
 
@@ -105,7 +105,7 @@ class OpenWorkspaceDirectorySkill(Skill):
                     success=False,
                     message=(
                         f"Le dossier '{relative_path}' "
-                        "n'existe pas dans la zone Atlas."
+                        "n'existe pas dans la zone Sideron."
                     ),
                 )
 
@@ -118,7 +118,7 @@ class OpenWorkspaceDirectorySkill(Skill):
                     ),
                 )
 
-        except AtlasStorageError as exc:
+        except SideronStorageError as exc:
 
             return SkillResult(
                 success=False,
@@ -138,7 +138,7 @@ class OpenWorkspaceDirectorySkill(Skill):
             success=True,
             message=(
                 f"Le dossier '{directory.name}' "
-                "est affiché dans l'interface Atlas."
+                "est affiché dans l'interface Sideron."
             ),
             data={
                 "path": str(

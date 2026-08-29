@@ -9,8 +9,8 @@ from atlas.security.risk import (
 )
 
 from atlas.service import (
-    AtlasServiceClient,
-    AtlasServiceError,
+    SideronServiceClient,
+    SideronServiceError,
 )
 
 from atlas.skills.base import (
@@ -56,7 +56,7 @@ class KillProcessSkill(Skill):
 
     def __init__(
         self,
-        service_client: AtlasServiceClient,
+        service_client: SideronServiceClient,
     ) -> None:
 
         self.service_client = (
@@ -199,7 +199,7 @@ class KillProcessSkill(Skill):
                 )
             )
 
-        except AtlasServiceError as exc:
+        except SideronServiceError as exc:
 
             return SkillResult(
                 success=False,

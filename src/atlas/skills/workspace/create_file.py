@@ -9,8 +9,8 @@ from atlas.skills.base import (
 )
 
 from atlas.storage import (
-    AtlasStorage,
-    AtlasStorageError,
+    SideronStorage,
+    SideronStorageError,
 )
 
 
@@ -20,7 +20,7 @@ class CreateWorkspaceFileSkill(Skill):
 
     description = (
         "Crée un nouveau fichier texte uniquement dans "
-        "la zone sécurisée d'Atlas. "
+        "la zone sécurisée d'Sideron. "
         "Cette opération ne peut pas écrire ailleurs sur le PC."
     )
 
@@ -36,7 +36,7 @@ class CreateWorkspaceFileSkill(Skill):
             "path": {
                 "type": "string",
                 "description": (
-                    "Chemin relatif du fichier dans la zone Atlas. "
+                    "Chemin relatif du fichier dans la zone Sideron. "
                     "Exemple : Documents/notes.txt"
                 ),
             },
@@ -56,7 +56,7 @@ class CreateWorkspaceFileSkill(Skill):
 
     def __init__(
         self,
-        storage: AtlasStorage,
+        storage: SideronStorage,
     ) -> None:
 
         self.storage = storage
@@ -116,7 +116,7 @@ class CreateWorkspaceFileSkill(Skill):
                 )
             )
 
-        except AtlasStorageError as exc:
+        except SideronStorageError as exc:
 
             return SkillResult(
                 success=False,
@@ -127,7 +127,7 @@ class CreateWorkspaceFileSkill(Skill):
             success=True,
             message=(
                 f"Le fichier '{destination.name}' "
-                "a été créé dans la zone Atlas."
+                "a été créé dans la zone Sideron."
             ),
             data={
                 "path": str(

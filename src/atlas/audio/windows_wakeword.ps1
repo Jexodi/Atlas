@@ -1,5 +1,5 @@
 param(
-    [string]$WakeWord = "Atlas",
+    [string]$WakeWord = "SIDERON",
     [string]$Culture = "fr-FR",
     [double]$MinConfidence = 0.55
 )
@@ -51,7 +51,7 @@ try {
     $builder.Append($choices)
 
     $grammar = New-Object System.Speech.Recognition.Grammar($builder)
-    $grammar.Name = "AtlasWakeWord"
+    $grammar.Name = "SideronWakeWord"
 
     $engine.LoadGrammar($grammar)
 

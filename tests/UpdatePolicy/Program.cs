@@ -1,25 +1,25 @@
-using Atlas.UI.Services;
+using Sideron.UI.Services;
 using System.Net;
 using System.Text.Json;
 
 var cases = new[] {
-    ("3.3.5", "rc", "3.3.5-rc.2", "3.3.5", AtlasUpdateStatus.UpToDate),
-    ("3.3.5", "rc", "3.3.6-rc.1", "3.3.5", AtlasUpdateStatus.UpdateAvailable),
-    ("3.3.6-rc.2", "rc", "3.3.6-rc.1", "3.3.5", AtlasUpdateStatus.UpToDate),
-    ("3.3.6-rc.1", "rc", "3.3.6-rc.1", "3.3.5", AtlasUpdateStatus.UpToDate),
-    ("3.3.5", "release", "3.3.5", "3.3.5", AtlasUpdateStatus.ReinstallAvailable),
-    ("3.3.6-rc.1", "release", "3.3.5", "3.3.5", AtlasUpdateStatus.ReinstallAvailable),
-    ("3.3.5-rc.2", "release", "3.3.5", "3.3.5", AtlasUpdateStatus.UpdateAvailable),
+    ("3.3.5", "rc", "3.3.5-rc.2", "3.3.5", SideronUpdateStatus.UpToDate),
+    ("3.3.5", "rc", "3.3.6-rc.1", "3.3.5", SideronUpdateStatus.UpdateAvailable),
+    ("3.3.6-rc.2", "rc", "3.3.6-rc.1", "3.3.5", SideronUpdateStatus.UpToDate),
+    ("3.3.6-rc.1", "rc", "3.3.6-rc.1", "3.3.5", SideronUpdateStatus.UpToDate),
+    ("3.3.5", "release", "3.3.5", "3.3.5", SideronUpdateStatus.ReinstallAvailable),
+    ("3.3.6-rc.1", "release", "3.3.5", "3.3.5", SideronUpdateStatus.ReinstallAvailable),
+    ("3.3.5-rc.2", "release", "3.3.5", "3.3.5", SideronUpdateStatus.UpdateAvailable),
 };
 foreach (var (installed, channel, candidate, stable, expected) in cases) {
     using var client = new HttpClient(new Manifests(channel, candidate, stable));
-    var result = await new AtlasUpdateService(client).CheckAsync(installed,
+    var result = await new SideronUpdateService(client).CheckAsync(installed,
         new(true, channel, true, $"https://test.invalid/{channel}.json"));
     if (result.Status != expected) throw new Exception($"{installed}/{candidate}: {result.Status} != {expected}");
 }
 using (var client = new HttpClient(new Manifests("rc", "3.3.6-rc.1", "3.3.5", true))) {
     try {
-        await new AtlasUpdateService(client).CheckAsync("3.3.5", new(true, "rc", true, "https://test.invalid/rc.json"));
+        await new SideronUpdateService(client).CheckAsync("3.3.5", new(true, "rc", true, "https://test.invalid/rc.json"));
         throw new Exception("Missing stable reference must block RC");
     } catch (HttpRequestException) { }
 }
@@ -33,7 +33,7 @@ sealed class Manifests(string channel, string candidate, string stable, bool fai
             Content = new StringContent(JsonSerializer.Serialize(new {
                 version = isStableReference ? stable : candidate,
                 channel = isStableReference ? "release" : channel,
-                url = "https://test.invalid/Atlas.exe", sha256 = new string('a', 64)
+                url = "https://test.invalid/SIDERON.exe", sha256 = new string('a', 64)
             }))
         });
     }

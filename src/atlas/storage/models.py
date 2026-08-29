@@ -12,7 +12,7 @@ StorageEntryType = Literal[
 @dataclass(slots=True)
 class StorageEntry:
     """
-    Représente un fichier ou un dossier trouvé par Atlas.
+    Représente un fichier ou un dossier trouvé par Sideron.
     """
 
     name: str
@@ -33,7 +33,7 @@ class StorageEntry:
 class ImportResult:
     """
     Résultat d'une copie depuis l'extérieur
-    vers le Workspace Atlas.
+    vers le Workspace Sideron.
     """
 
     source: Path

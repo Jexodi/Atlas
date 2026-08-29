@@ -1,6 +1,6 @@
 import asyncio
 
-from atlas.context.models import AtlasContext
+from atlas.context.models import SideronContext
 from atlas.context.system_context import (
     SystemContextProvider,
 )
@@ -29,9 +29,9 @@ class ContextManager:
             WindowsContextProvider()
         )
 
-        self.context = AtlasContext()
+        self.context = SideronContext()
 
-    def refresh(self) -> AtlasContext:
+    def refresh(self) -> SideronContext:
 
         previous_window = (
             self.context.window.active_window_title
@@ -68,7 +68,7 @@ class ContextManager:
 
     def get_context(
         self,
-    ) -> AtlasContext:
+    ) -> SideronContext:
 
         return self.context
 

@@ -5,23 +5,23 @@
 
 $ErrorActionPreference = "Stop"
 
-$AtlasRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
-$Python = Join-Path $AtlasRoot ".venv\Scripts\python.exe"
-$Spec = Join-Path $PSScriptRoot "atlas_service.spec"
+$SideronRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$Python = Join-Path $SideronRoot ".venv\Scripts\python.exe"
+$Spec = Join-Path $PSScriptRoot "sideron_service.spec"
 
 if ([string]::IsNullOrWhiteSpace($BuildRoot))
 {
-    $BuildRoot = Join-Path $AtlasRoot "build\service-package"
+    $BuildRoot = Join-Path $SideronRoot "build\service-package"
 }
 
 if ([string]::IsNullOrWhiteSpace($DistRoot))
 {
-    $DistRoot = Join-Path $AtlasRoot "build\service-dist"
+    $DistRoot = Join-Path $SideronRoot "build\service-dist"
 }
 
-$ServiceExe = Join-Path $DistRoot "Atlas.Service\Atlas.Service.exe"
+$ServiceExe = Join-Path $DistRoot "SIDERON.Service\SIDERON.Service.exe"
 
-Write-Host "=== AtlasService Standalone Builder ===" -ForegroundColor Cyan
+Write-Host "=== SideronService Standalone Builder ===" -ForegroundColor Cyan
 Write-Host ""
 
 if (-not (Test-Path $Python))
@@ -43,7 +43,7 @@ Installe la dependance avec :
 
 if (-not (Test-Path $Spec))
 {
-    throw "Spec AtlasService introuvable : $Spec"
+    throw "Spec SideronService introuvable : $Spec"
 }
 
 if (Test-Path $BuildRoot)
@@ -56,11 +56,11 @@ if (Test-Path $DistRoot)
     Remove-Item $DistRoot -Recurse -Force
 }
 
-Push-Location $AtlasRoot
+Push-Location $SideronRoot
 
 try
 {
-    Write-Host "1/2 - Packaging AtlasService..." -ForegroundColor Cyan
+    Write-Host "1/2 - Packaging SideronService..." -ForegroundColor Cyan
 
     $PyInstallerStdOut = [System.IO.Path]::GetTempFileName()
     $PyInstallerStdErr = [System.IO.Path]::GetTempFileName()
@@ -139,7 +139,7 @@ finally
 
 if (-not (Test-Path $ServiceExe))
 {
-    throw "Atlas.Service.exe n'a pas ete genere."
+    throw "SIDERON.Service.exe n'a pas ete genere."
 }
 
 Write-Host ""
@@ -153,11 +153,11 @@ $Process = Start-Process `
 
 if ($Process.ExitCode -ne 0)
 {
-    throw "L'auto-test Atlas.Service.exe a echoue avec le code $($Process.ExitCode)."
+    throw "L'auto-test SIDERON.Service.exe a echoue avec le code $($Process.ExitCode)."
 }
 
 Write-Host ""
-Write-Host "Atlas.Service.exe autonome genere et valide :" -ForegroundColor Green
+Write-Host "SIDERON.Service.exe autonome genere et valide :" -ForegroundColor Green
 Write-Host $ServiceExe
 Write-Host ""
 Write-Host "Aucune installation de service Windows n'a ete modifiee." -ForegroundColor DarkGray

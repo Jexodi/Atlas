@@ -11,30 +11,30 @@ from atlas.storage.models import (
 )
 
 
-class AtlasStorageError(Exception):
+class SideronStorageError(Exception):
     """
-    Erreur de base du système de stockage Atlas.
+    Erreur de base du système de stockage Sideron.
     """
 
 
-class AtlasStoragePermissionError(
-    AtlasStorageError
+class SideronStoragePermissionError(
+    SideronStorageError
 ):
     """
     Une opération interdite a été demandée.
     """
 
 
-class AtlasStorageNotFoundError(
-    AtlasStorageError
+class SideronStorageNotFoundError(
+    SideronStorageError
 ):
     """
     Le fichier ou dossier demandé n'existe pas.
     """
 
 
-class AtlasStorageUnsupportedFileError(
-    AtlasStorageError
+class SideronStorageUnsupportedFileError(
+    SideronStorageError
 ):
     """
     Le type de fichier demandé n'est pas autorisé
@@ -42,7 +42,7 @@ class AtlasStorageUnsupportedFileError(
     """
 
 
-class AtlasStorage:
+class SideronStorage:
 
     TEXT_EXTENSIONS = {
         ".txt",
@@ -186,9 +186,9 @@ class AtlasStorage:
             candidate
         ):
 
-            raise AtlasStoragePermissionError(
+            raise SideronStoragePermissionError(
                 "Cette opération est interdite en dehors "
-                "de la zone de stockage Atlas."
+                "de la zone de stockage Sideron."
             )
 
         return candidate
@@ -208,8 +208,8 @@ class AtlasStorage:
 
         if relative.is_absolute():
 
-            raise AtlasStoragePermissionError(
-                "Un chemin relatif à la zone Atlas "
+            raise SideronStoragePermissionError(
+                "Un chemin relatif à la zone Sideron "
                 "est attendu."
             )
 
@@ -237,7 +237,7 @@ class AtlasStorage:
 
         if not candidate.exists():
 
-            raise AtlasStorageNotFoundError(
+            raise SideronStorageNotFoundError(
                 f"Chemin introuvable : {candidate}"
             )
 
@@ -260,7 +260,7 @@ class AtlasStorage:
 
         if not candidate.is_file():
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "Le chemin demandé n'est pas un fichier."
             )
 
@@ -274,7 +274,7 @@ class AtlasStorage:
             not in self.TEXT_EXTENSIONS
         ):
 
-            raise AtlasStorageUnsupportedFileError(
+            raise SideronStorageUnsupportedFileError(
                 f"Le fichier '{candidate.name}' "
                 "n'est pas considéré comme un fichier texte."
             )
@@ -285,7 +285,7 @@ class AtlasStorage:
 
         if size > max_bytes:
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "Le fichier est trop volumineux "
                 f"pour être lu directement ({size} octets)."
             )
@@ -310,7 +310,7 @@ class AtlasStorage:
 
         if not candidate.is_dir():
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "Le chemin demandé n'est pas un dossier."
             )
 
@@ -328,7 +328,7 @@ class AtlasStorage:
 
         except PermissionError as exc:
 
-            raise AtlasStoragePermissionError(
+            raise SideronStoragePermissionError(
                 f"Accès refusé : {candidate}"
             ) from exc
 
@@ -387,7 +387,7 @@ class AtlasStorage:
 
         if not search_root.is_dir():
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "La racine de recherche doit être un dossier."
             )
 
@@ -397,7 +397,7 @@ class AtlasStorage:
 
         if not query_normalized:
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "La recherche ne peut pas être vide."
             )
 
@@ -496,7 +496,7 @@ class AtlasStorage:
 
         if not source_path.is_file():
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "La source n'est pas un fichier."
             )
 
@@ -555,7 +555,7 @@ class AtlasStorage:
 
         if not source_path.is_dir():
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "La source n'est pas un dossier."
             )
 
@@ -717,7 +717,7 @@ class AtlasStorage:
             not in self.TEXT_EXTENSIONS
         ):
 
-            raise AtlasStorageUnsupportedFileError(
+            raise SideronStorageUnsupportedFileError(
                 f"Le fichier '{destination.name}' "
                 "n'est pas considéré comme un fichier texte."
             )
@@ -732,7 +732,7 @@ class AtlasStorage:
             and not overwrite
         ):
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "Le fichier existe déjà et "
                 "l'écrasement n'a pas été autorisé."
             )
@@ -742,7 +742,7 @@ class AtlasStorage:
             and destination.is_dir()
         ):
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "Le chemin demandé correspond à un dossier."
             )
 
@@ -769,13 +769,13 @@ class AtlasStorage:
 
         if not destination.exists():
 
-            raise AtlasStorageNotFoundError(
+            raise SideronStorageNotFoundError(
                 f"Fichier introuvable : {destination}"
             )
 
         if not destination.is_file():
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "Le chemin demandé n'est pas un fichier."
             )
 
@@ -789,7 +789,7 @@ class AtlasStorage:
             not in self.TEXT_EXTENSIONS
         ):
 
-            raise AtlasStorageUnsupportedFileError(
+            raise SideronStorageUnsupportedFileError(
                 f"Le fichier '{destination.name}' "
                 "n'est pas considéré comme un fichier texte."
             )
@@ -817,21 +817,21 @@ class AtlasStorage:
 
         if not source.exists():
 
-            raise AtlasStorageNotFoundError(
+            raise SideronStorageNotFoundError(
                 f"Chemin introuvable : {source}"
             )
 
         if source == self.root:
 
-            raise AtlasStoragePermissionError(
-                "La racine Atlas ne peut pas être renommée."
+            raise SideronStoragePermissionError(
+                "La racine Sideron ne peut pas être renommée."
             )
 
         new_name = new_name.strip()
 
         if not new_name:
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "Le nouveau nom ne peut pas être vide."
             )
 
@@ -840,7 +840,7 @@ class AtlasStorage:
             != new_name
         ):
 
-            raise AtlasStoragePermissionError(
+            raise SideronStoragePermissionError(
                 "Le nouveau nom ne doit pas contenir de chemin."
             )
 
@@ -855,7 +855,7 @@ class AtlasStorage:
 
         if destination.exists():
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "Un fichier ou dossier portant ce nom existe déjà."
             )
 
@@ -885,26 +885,26 @@ class AtlasStorage:
 
         if not source.exists():
 
-            raise AtlasStorageNotFoundError(
+            raise SideronStorageNotFoundError(
                 f"Chemin introuvable : {source}"
             )
 
         if source == self.root:
 
-            raise AtlasStoragePermissionError(
-                "La racine Atlas ne peut pas être déplacée."
+            raise SideronStoragePermissionError(
+                "La racine Sideron ne peut pas être déplacée."
             )
 
         if not destination_root.exists():
 
-            raise AtlasStorageNotFoundError(
+            raise SideronStorageNotFoundError(
                 f"Dossier de destination introuvable : "
                 f"{destination_root}"
             )
 
         if not destination_root.is_dir():
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "La destination doit être un dossier."
             )
 
@@ -919,7 +919,7 @@ class AtlasStorage:
 
         if destination.exists():
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "Un élément du même nom existe déjà "
                 "dans le dossier de destination."
             )
@@ -932,7 +932,7 @@ class AtlasStorage:
             )
         ):
 
-            raise AtlasStorageError(
+            raise SideronStorageError(
                 "Un dossier ne peut pas être déplacé "
                 "dans lui-même ou dans l'un de ses sous-dossiers."
             )
@@ -961,14 +961,14 @@ class AtlasStorage:
 
         if not target.exists():
 
-            raise AtlasStorageNotFoundError(
+            raise SideronStorageNotFoundError(
                 f"Chemin introuvable : {target}"
             )
 
         if target == self.root:
 
-            raise AtlasStoragePermissionError(
-                "La racine Atlas ne peut pas être supprimée."
+            raise SideronStoragePermissionError(
+                "La racine Sideron ne peut pas être supprimée."
             )
 
         if target.is_dir():

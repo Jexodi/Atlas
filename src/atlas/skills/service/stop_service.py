@@ -7,8 +7,8 @@ from atlas.security.risk import (
 )
 
 from atlas.service import (
-    AtlasServiceClient,
-    AtlasServiceError,
+    SideronServiceClient,
+    SideronServiceError,
 )
 
 from atlas.skills.base import (
@@ -24,7 +24,7 @@ class StopServiceSkill(Skill):
 
     description = (
         "Arrête un service Windows en passant "
-        "exclusivement par AtlasService. "
+        "exclusivement par SideronService. "
         "Utiliser le nom système exact du service, "
         "par exemple 'Spooler'."
     )
@@ -55,7 +55,7 @@ class StopServiceSkill(Skill):
 
     def __init__(
         self,
-        service_client: AtlasServiceClient,
+        service_client: SideronServiceClient,
     ) -> None:
 
         self.service_client = (
@@ -126,7 +126,7 @@ class StopServiceSkill(Skill):
                 )
             )
 
-        except AtlasServiceError as exc:
+        except SideronServiceError as exc:
 
             return SkillResult(
                 success=False,

@@ -5,12 +5,12 @@ from unittest.mock import Mock
 import pytest
 
 from atlas.ipc import telemetry
-from atlas.ipc.telemetry import AtlasTelemetryPublisher
+from atlas.ipc.telemetry import SideronTelemetryPublisher
 
 
 @pytest.fixture
 def publisher(monkeypatch):
-    instance = AtlasTelemetryPublisher(Mock(), Mock(), lambda: 'C:\\Atlas')
+    instance = SideronTelemetryPublisher(Mock(), Mock(), lambda: 'C:\\SIDERON')
     monkeypatch.setattr(telemetry.time, 'monotonic', lambda: 100.0)
     monkeypatch.setattr(telemetry.psutil, 'net_if_stats', lambda: {
         'Ethernet 4': SimpleNamespace(isup=True, speed=4294),
@@ -33,7 +33,7 @@ def test_windows_speed_reaches_telemetry(publisher, monkeypatch, mbps):
 
 @pytest.mark.parametrize('raw', [None, 0, -1, True, '10 Gbps', {}, []])
 def test_unknown_windows_speed_never_exposes_saturation(raw):
-    assert AtlasTelemetryPublisher._resolve_link_speed_mbps(
+    assert SideronTelemetryPublisher._resolve_link_speed_mbps(
         'Ethernet 4', {'interface_alias': 'Ethernet 4', 'link_speed_bps': raw},
         SimpleNamespace(isup=True, speed=4294),
     ) is None
@@ -41,20 +41,20 @@ def test_unknown_windows_speed_never_exposes_saturation(raw):
 
 @pytest.mark.parametrize('speed, expected', [(0, None), (-1, None), (1000, 1000), (2500, 2500), (10000, 10000)])
 def test_psutil_fallback(speed, expected):
-    assert AtlasTelemetryPublisher._resolve_link_speed_mbps(
+    assert SideronTelemetryPublisher._resolve_link_speed_mbps(
         'Ethernet 4', {}, SimpleNamespace(isup=True, speed=speed),
     ) == expected
 
 
 @pytest.mark.parametrize('stats', [None, SimpleNamespace(isup=False, speed=10000)])
 def test_disconnected_interface_has_no_speed(stats):
-    assert AtlasTelemetryPublisher._resolve_link_speed_mbps(
+    assert SideronTelemetryPublisher._resolve_link_speed_mbps(
         'Ethernet 4', {'interface_alias': 'Ethernet 4', 'link_speed_bps': 10_000_000_000}, stats,
     ) is None
 
 
 def test_different_adapter_does_not_inherit_cached_speed():
-    assert AtlasTelemetryPublisher._resolve_link_speed_mbps(
+    assert SideronTelemetryPublisher._resolve_link_speed_mbps(
         'Ethernet', {'interface_alias': 'Ethernet 4', 'link_speed_bps': 10_000_000_000},
         SimpleNamespace(isup=True, speed=1000),
     ) == 1000

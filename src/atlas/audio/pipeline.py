@@ -162,7 +162,7 @@ class AudioPipeline:
             },
         )
 
-        # En mode wake word, tout s'arrête ici tant qu'Atlas
+        # En mode wake word, tout s'arrête ici tant qu'Sideron
         # n'a pas été réveillé. Aucun VAD, aucun realtime_queue.
         if (
             self.listening_mode
@@ -184,7 +184,7 @@ class AudioPipeline:
             self.voice_session_active = True
 
             self.logger.info(
-                "Wake word Atlas détecté : session vocale ouverte."
+                "Wake word Sideron détecté : session vocale ouverte."
             )
 
             self.event_bus.publish(
@@ -216,7 +216,7 @@ class AudioPipeline:
             )
         ):
             self.logger.debug(
-                "Écho Atlas détecté : bloc ignoré par le VAD."
+                "Écho Sideron détecté : bloc ignoré par le VAD."
             )
             return
 
@@ -309,7 +309,7 @@ class AudioPipeline:
         )
 
         self.logger.info(
-            "Mode d'écoute Atlas : %s -> %s.",
+            "Mode d'écoute Sideron : %s -> %s.",
             previous_mode.value,
             new_mode.value,
         )

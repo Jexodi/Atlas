@@ -1,19 +1,19 @@
 from pathlib import Path
 
 from atlas.storage import (
-    AtlasStorage,
-    AtlasStoragePermissionError,
+    SideronStorage,
+    SideronStoragePermissionError,
 )
 
 
 def main():
 
     print()
-    print("=== TEST ATLAS STORAGE ===")
+    print("=== TEST SIDERON STORAGE ===")
     print()
 
-    storage = AtlasStorage(
-        r"C:\Atlas"
+    storage = SideronStorage(
+        r"C:\SIDERON"
     )
 
     storage.initialize()
@@ -47,7 +47,7 @@ def main():
     test_file = (
         storage.write_text(
             "Documents/Test/atlas_test.txt",
-            "Bonjour depuis AtlasStorage.",
+            "Bonjour depuis SideronStorage.",
             overwrite=True,
         )
     )
@@ -92,7 +92,7 @@ def main():
             "❌ ERREUR : sécurité contournée."
         )
 
-    except AtlasStoragePermissionError as exc:
+    except SideronStoragePermissionError as exc:
 
         print(
             "✅ Sortie Workspace bloquée :",
@@ -118,7 +118,7 @@ def main():
             "❌ ERREUR : chemin absolu accepté."
         )
 
-    except AtlasStoragePermissionError as exc:
+    except SideronStoragePermissionError as exc:
 
         print(
             "✅ Chemin absolu bloqué :",

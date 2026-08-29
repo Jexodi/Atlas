@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class AtlasState:
+class SideronState:
 
     running: bool = False
 

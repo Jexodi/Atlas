@@ -22,13 +22,13 @@ sys.path.insert(
 
 
 from atlas.core.application import (
-    AtlasApplication,
+    SideronApplication,
 )
 
 
 async def run_core() -> None:
 
-    atlas = AtlasApplication()
+    atlas = SideronApplication()
 
     stop_event = (
         asyncio.Event()
@@ -97,7 +97,7 @@ async def run_core() -> None:
     await atlas.initialize()
 
     print(
-        "Atlas Core prêt. "
+        "Sideron Core prêt. "
         "Ctrl+C pour arrêter."
     )
 

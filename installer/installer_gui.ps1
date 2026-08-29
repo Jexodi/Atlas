@@ -14,7 +14,7 @@ Add-Type @"
 using System;
 using System.Runtime.InteropServices;
 
-public static class AtlasInstallerNative
+public static class SideronInstallerNative
 {
     public const uint WM_SETICON = 0x0080;
     public const int ICON_SMALL = 0;
@@ -62,7 +62,7 @@ public static class AtlasInstallerNative
 }
 "@
 
-$AtlasRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$SideronRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $StorageScript = Join-Path $PSScriptRoot "storage_partition.ps1"
 
 if (-not (Test-Path $StorageScript))
@@ -70,12 +70,12 @@ if (-not (Test-Path $StorageScript))
     throw "storage_partition.ps1 est introuvable : $StorageScript"
 }
 
-$AtlasAppUserModelId = "Atlas.Setup"
+$SideronAppUserModelId = "SIDERON.Setup"
 $InstallerDiagnosticLogPath = Join-Path `
     $env:TEMP `
-    "Atlas-installation-error.log"
+    "Sideron-installation-error.log"
 
-function Write-AtlasInstallerDiagnostic
+function Write-SideronInstallerDiagnostic
 {
     param(
         [string]$Stage,
@@ -89,7 +89,7 @@ function Write-AtlasInstallerDiagnostic
     {
         $Lines = New-Object System.Collections.Generic.List[string]
 
-        $Lines.Add("Atlas - diagnostic d'installation")
+        $Lines.Add("Sideron - diagnostic d'installation")
         $Lines.Add("Date : $([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))")
         $Lines.Add("Étape : $Stage")
         $Lines.Add("PowerShell : $($PSVersionTable.PSVersion)")
@@ -120,7 +120,7 @@ function Write-AtlasInstallerDiagnostic
         if ($null -ne $InstallResult)
         {
             $Lines.Add("")
-            $Lines.Add("Installation Atlas :")
+            $Lines.Add("Installation Sideron :")
             $Lines.Add("Code de sortie : $($InstallResult.ExitCode)")
             $Lines.Add("Sortie standard :")
             $Lines.Add([string]$InstallResult.Output)
@@ -164,19 +164,54 @@ function Write-AtlasInstallerDiagnostic
 
 try
 {
-    [void][AtlasInstallerNative]::SetCurrentProcessExplicitAppUserModelID(
-        $AtlasAppUserModelId
+    [void][SideronInstallerNative]::SetCurrentProcessExplicitAppUserModelID(
+        $SideronAppUserModelId
     )
 }
 catch
 {
 }
 
+function Set-SideronAdaptiveWindow
+{
+    param(
+        [System.Windows.Window]$TargetWindow,
+        [double]$PreferredWidth,
+        [double]$PreferredHeight,
+        [double]$ScreenMargin = 24
+    )
+
+    $WorkArea = [System.Windows.SystemParameters]::WorkArea
+    $AvailableWidth = [Math]::Max(320, $WorkArea.Width - $ScreenMargin)
+    $AvailableHeight = [Math]::Max(220, $WorkArea.Height - $ScreenMargin)
+
+    $Scale = [Math]::Min(
+        1.0,
+        [Math]::Min(
+            $AvailableWidth / $PreferredWidth,
+            $AvailableHeight / $PreferredHeight
+        )
+    )
+
+    if ($Scale -lt 1.0 -and $null -ne $TargetWindow.Content)
+    {
+        # Réduit le contenu et la fenêtre ensemble. Une simple MaxHeight
+        # réduit uniquement le cadre et coupe les dernières lignes.
+        $TargetWindow.Content.LayoutTransform =
+            [System.Windows.Media.ScaleTransform]::new($Scale, $Scale)
+    }
+
+    $TargetWindow.MaxWidth = $AvailableWidth
+    $TargetWindow.MaxHeight = $AvailableHeight
+    $TargetWindow.Width = [Math]::Min($PreferredWidth * $Scale, $AvailableWidth)
+    $TargetWindow.Height = [Math]::Min($PreferredHeight * $Scale, $AvailableHeight)
+}
+
 [xml]$Xaml = @"
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Installation Atlas"
+    Title="Installation Sideron"
     Width="1060"
     Height="720"
     WindowStartupLocation="CenterScreen"
@@ -477,7 +512,7 @@ catch
 
         <StackPanel Grid.Column="0">
             <TextBlock
-                Text="INSTALLATION ATLAS"
+                Text="INSTALLATION SIDERON"
                 FontSize="13"
                 FontWeight="Bold"
                 Foreground="#F0FAFF"
@@ -491,7 +526,7 @@ catch
                 Foreground="#F4FBFF"/>
 
             <TextBlock
-                Text="Choisissez où Atlas pourra stocker ses données et configurez son démarrage avec Windows."
+                Text="Choisissez où Sideron pourra stocker ses données et configurez son démarrage avec Windows."
                 FontSize="13"
                 Margin="0,8,0,0"
                 Foreground="#95A8B5"
@@ -548,10 +583,10 @@ catch
                     <RadioButton
                         x:Name="ModeFolder"
                         IsChecked="True"
-                        Content="Dossier local — C:\Atlas"/>
+                        Content="Dossier local — C:\SIDERON"/>
 
                     <TextBlock
-                        Text="Aucune modification de partition. Atlas utilise simplement C:\Atlas."
+                        Text="Aucune modification de partition. Sideron utilise simplement C:\SIDERON."
                         Margin="24,0,0,14"
                         FontSize="11"
                         Foreground="#8297A6"
@@ -559,7 +594,7 @@ catch
 
                     <RadioButton
                         x:Name="ModeShrink"
-                        Content="Créer un volume ATLAS en réduisant une partition"/>
+                        Content="Créer un volume SIDERON en réduisant une partition"/>
 
                     <TextBlock
                         Text="Vous choisissez le disque, la partition et la taille du nouveau volume."
@@ -570,10 +605,10 @@ catch
 
                     <RadioButton
                         x:Name="ModeWholeDisk"
-                        Content="Dédier un disque entier à Atlas"/>
+                        Content="Dédier un disque entier à Sideron"/>
 
                     <TextBlock
-                        Text="Le disque sélectionné sera entièrement réservé à Atlas."
+                        Text="Le disque sélectionné sera entièrement réservé à Sideron."
                         Margin="24,0,0,22"
                         FontSize="11"
                         Foreground="#8297A6"
@@ -616,7 +651,7 @@ catch
                         Visibility="Collapsed">
 
                         <TextBlock
-                            Text="Taille du volume ATLAS"
+                            Text="Taille du volume SIDERON"
                             FontWeight="SemiBold"
                             Margin="0,0,0,6"/>
 
@@ -673,7 +708,7 @@ catch
                                     FontWeight="SemiBold"/>
 
                                 <TextBlock
-                                    Text="Lancer automatiquement Atlas à l’ouverture de votre session Windows."
+                                    Text="Lancer automatiquement Sideron à l’ouverture de votre session Windows."
                                     Margin="0,4,20,0"
                                     FontSize="11"
                                     Foreground="#8297A6"
@@ -703,7 +738,7 @@ catch
                                     FontWeight="SemiBold"/>
 
                                 <TextBlock
-                                    Text="Créer un raccourci Atlas sur le Bureau de l’utilisateur."
+                                    Text="Créer un raccourci Sideron sur le Bureau de l’utilisateur."
                                     Margin="0,4,20,0"
                                     FontSize="11"
                                     Foreground="#8297A6"
@@ -787,7 +822,7 @@ catch
 
                 <Button
                     x:Name="InstallButton"
-                    Content="Installer Atlas"
+                    Content="Installer Sideron"
                     Background="#1D6C8E"
                     BorderBrush="#56A8C8"/>
             </StackPanel>
@@ -799,19 +834,23 @@ catch
 
 $Reader = New-Object System.Xml.XmlNodeReader $Xaml
 $Window = [Windows.Markup.XamlReader]::Load($Reader)
+Set-SideronAdaptiveWindow `
+    -TargetWindow $Window `
+    -PreferredWidth 1060 `
+    -PreferredHeight 720
 
-$AtlasInstallerIconPath = Join-Path $PSScriptRoot "atlas.ico"
-$AtlasInstallerLargeIconHandle = [IntPtr]::Zero
-$AtlasInstallerSmallIconHandle = [IntPtr]::Zero
-$AtlasInstallerWindowHandle = [IntPtr]::Zero
+$SideronInstallerIconPath = Join-Path $PSScriptRoot "sideron.ico"
+$SideronInstallerLargeIconHandle = [IntPtr]::Zero
+$SideronInstallerSmallIconHandle = [IntPtr]::Zero
+$SideronInstallerWindowHandle = [IntPtr]::Zero
 
-if (Test-Path $AtlasInstallerIconPath)
+if (Test-Path $SideronInstallerIconPath)
 {
     try
     {
         $Window.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create(
             [System.Uri]::new(
-                $AtlasInstallerIconPath
+                $SideronInstallerIconPath
             )
         )
     }
@@ -823,50 +862,50 @@ if (Test-Path $AtlasInstallerIconPath)
 $Window.Add_SourceInitialized({
     try
     {
-        [void][AtlasInstallerNative]::SetCurrentProcessExplicitAppUserModelID(
-            $AtlasAppUserModelId
+        [void][SideronInstallerNative]::SetCurrentProcessExplicitAppUserModelID(
+            $SideronAppUserModelId
         )
 
         $InteropHelper = New-Object System.Windows.Interop.WindowInteropHelper($Window)
-        $script:AtlasInstallerWindowHandle = $InteropHelper.Handle
+        $script:SideronInstallerWindowHandle = $InteropHelper.Handle
 
-        if ((Test-Path $AtlasInstallerIconPath) -and $script:AtlasInstallerWindowHandle -ne [IntPtr]::Zero)
+        if ((Test-Path $SideronInstallerIconPath) -and $script:SideronInstallerWindowHandle -ne [IntPtr]::Zero)
         {
-            $script:AtlasInstallerLargeIconHandle = [AtlasInstallerNative]::LoadImage(
+            $script:SideronInstallerLargeIconHandle = [SideronInstallerNative]::LoadImage(
                 [IntPtr]::Zero,
-                $AtlasInstallerIconPath,
-                [AtlasInstallerNative]::IMAGE_ICON,
+                $SideronInstallerIconPath,
+                [SideronInstallerNative]::IMAGE_ICON,
                 32,
                 32,
-                ([AtlasInstallerNative]::LR_LOADFROMFILE -bor [AtlasInstallerNative]::LR_DEFAULTSIZE)
+                ([SideronInstallerNative]::LR_LOADFROMFILE -bor [SideronInstallerNative]::LR_DEFAULTSIZE)
             )
 
-            $script:AtlasInstallerSmallIconHandle = [AtlasInstallerNative]::LoadImage(
+            $script:SideronInstallerSmallIconHandle = [SideronInstallerNative]::LoadImage(
                 [IntPtr]::Zero,
-                $AtlasInstallerIconPath,
-                [AtlasInstallerNative]::IMAGE_ICON,
+                $SideronInstallerIconPath,
+                [SideronInstallerNative]::IMAGE_ICON,
                 16,
                 16,
-                ([AtlasInstallerNative]::LR_LOADFROMFILE -bor [AtlasInstallerNative]::LR_DEFAULTSIZE)
+                ([SideronInstallerNative]::LR_LOADFROMFILE -bor [SideronInstallerNative]::LR_DEFAULTSIZE)
             )
 
-            if ($script:AtlasInstallerLargeIconHandle -ne [IntPtr]::Zero)
+            if ($script:SideronInstallerLargeIconHandle -ne [IntPtr]::Zero)
             {
-                [void][AtlasInstallerNative]::SendMessage(
-                    $script:AtlasInstallerWindowHandle,
-                    [AtlasInstallerNative]::WM_SETICON,
-                    [IntPtr][AtlasInstallerNative]::ICON_BIG,
-                    $script:AtlasInstallerLargeIconHandle
+                [void][SideronInstallerNative]::SendMessage(
+                    $script:SideronInstallerWindowHandle,
+                    [SideronInstallerNative]::WM_SETICON,
+                    [IntPtr][SideronInstallerNative]::ICON_BIG,
+                    $script:SideronInstallerLargeIconHandle
                 )
             }
 
-            if ($script:AtlasInstallerSmallIconHandle -ne [IntPtr]::Zero)
+            if ($script:SideronInstallerSmallIconHandle -ne [IntPtr]::Zero)
             {
-                [void][AtlasInstallerNative]::SendMessage(
-                    $script:AtlasInstallerWindowHandle,
-                    [AtlasInstallerNative]::WM_SETICON,
-                    [IntPtr][AtlasInstallerNative]::ICON_SMALL,
-                    $script:AtlasInstallerSmallIconHandle
+                [void][SideronInstallerNative]::SendMessage(
+                    $script:SideronInstallerWindowHandle,
+                    [SideronInstallerNative]::WM_SETICON,
+                    [IntPtr][SideronInstallerNative]::ICON_SMALL,
+                    $script:SideronInstallerSmallIconHandle
                 )
             }
         }
@@ -877,26 +916,26 @@ $Window.Add_SourceInitialized({
 })
 
 $Window.Add_Closed({
-    if ($script:AtlasInstallerLargeIconHandle -ne [IntPtr]::Zero)
+    if ($script:SideronInstallerLargeIconHandle -ne [IntPtr]::Zero)
     {
-        [void][AtlasInstallerNative]::DestroyIcon(
-            $script:AtlasInstallerLargeIconHandle
+        [void][SideronInstallerNative]::DestroyIcon(
+            $script:SideronInstallerLargeIconHandle
         )
 
-        $script:AtlasInstallerLargeIconHandle = [IntPtr]::Zero
+        $script:SideronInstallerLargeIconHandle = [IntPtr]::Zero
     }
 
-    if ($script:AtlasInstallerSmallIconHandle -ne [IntPtr]::Zero)
+    if ($script:SideronInstallerSmallIconHandle -ne [IntPtr]::Zero)
     {
-        [void][AtlasInstallerNative]::DestroyIcon(
-            $script:AtlasInstallerSmallIconHandle
+        [void][SideronInstallerNative]::DestroyIcon(
+            $script:SideronInstallerSmallIconHandle
         )
 
-        $script:AtlasInstallerSmallIconHandle = [IntPtr]::Zero
+        $script:SideronInstallerSmallIconHandle = [IntPtr]::Zero
     }
 })
 
-$SetupReadyEventName = $env:ATLAS_SETUP_READY_EVENT
+$SetupReadyEventName = $env:SIDERON_SETUP_READY_EVENT
 $SetupReadyEvent = $null
 
 if (-not [string]::IsNullOrWhiteSpace($SetupReadyEventName))
@@ -918,21 +957,21 @@ $Window.Add_ContentRendered({
         $Window.ShowInTaskbar = $true
         $Window.WindowState = [System.Windows.WindowState]::Normal
 
-        if ($script:AtlasInstallerWindowHandle -eq [IntPtr]::Zero)
+        if ($script:SideronInstallerWindowHandle -eq [IntPtr]::Zero)
         {
             $InteropHelper = New-Object System.Windows.Interop.WindowInteropHelper($Window)
-            $script:AtlasInstallerWindowHandle = $InteropHelper.Handle
+            $script:SideronInstallerWindowHandle = $InteropHelper.Handle
         }
 
-        if ($script:AtlasInstallerWindowHandle -ne [IntPtr]::Zero)
+        if ($script:SideronInstallerWindowHandle -ne [IntPtr]::Zero)
         {
-            [void][AtlasInstallerNative]::ShowWindow(
-                $script:AtlasInstallerWindowHandle,
-                [AtlasInstallerNative]::SW_RESTORE
+            [void][SideronInstallerNative]::ShowWindow(
+                $script:SideronInstallerWindowHandle,
+                [SideronInstallerNative]::SW_RESTORE
             )
 
-            [void][AtlasInstallerNative]::SetForegroundWindow(
-                $script:AtlasInstallerWindowHandle
+            [void][SideronInstallerNative]::SetForegroundWindow(
+                $script:SideronInstallerWindowHandle
             )
         }
 
@@ -1264,7 +1303,7 @@ function Update-ModeUi
         $PartitionSelectionPanel.Visibility = "Collapsed"
         $PartitionSizePanel.Visibility = "Collapsed"
 
-        $StatusText.Text = "Stockage prévu : C:\Atlas"
+        $StatusText.Text = "Stockage prévu : C:\SIDERON"
         return
     }
 
@@ -1274,7 +1313,7 @@ function Update-ModeUi
         $PartitionSelectionPanel.Visibility = "Visible"
         $PartitionSizePanel.Visibility = "Visible"
 
-        $StatusText.Text = "Choisissez le disque, la partition et la taille du volume ATLAS."
+        $StatusText.Text = "Choisissez le disque, la partition et la taille du volume SIDERON."
         Update-PartitionSizeRange
         return
     }
@@ -1283,7 +1322,7 @@ function Update-ModeUi
     $PartitionSelectionPanel.Visibility = "Collapsed"
     $PartitionSizePanel.Visibility = "Collapsed"
 
-    $StatusText.Text = "Choisissez le disque entier qui sera dédié à Atlas."
+    $StatusText.Text = "Choisissez le disque entier qui sera dédié à Sideron."
 }
 
 
@@ -1293,13 +1332,13 @@ function Get-SelectedStorageInstallPlan
     {
         return [PSCustomObject]@{
             Mode = "Folder"
-            StorageRoot = "C:\Atlas"
+            StorageRoot = "C:\SIDERON"
             DiskNumber = -1
             PartitionNumber = -1
             PartitionSizeGB = 0
             Confirmation = ""
             Destructive = $false
-            Summary = "Utiliser le dossier local C:\Atlas"
+            Summary = "Utiliser le dossier local C:\SIDERON"
         }
     }
 
@@ -1322,7 +1361,7 @@ function Get-SelectedStorageInstallPlan
 
         if (-not [int]::TryParse($SizeTextBox.Text, [ref]$SizeGB))
         {
-            throw "La taille du volume ATLAS doit être un nombre entier en Go."
+            throw "La taille du volume SIDERON doit être un nombre entier en Go."
         }
 
         return [PSCustomObject]@{
@@ -1331,9 +1370,9 @@ function Get-SelectedStorageInstallPlan
             DiskNumber = $SelectedDiskNumber
             PartitionNumber = $SelectedPartitionNumber
             PartitionSizeGB = $SizeGB
-            Confirmation = "CREER VOLUME ATLAS"
+            Confirmation = "CREER VOLUME SIDERON"
             Destructive = $true
-            Summary = "Réduire la partition sélectionnée et créer un volume ATLAS de $SizeGB Go"
+            Summary = "Réduire la partition sélectionnée et créer un volume SIDERON de $SizeGB Go"
         }
     }
 
@@ -1345,11 +1384,11 @@ function Get-SelectedStorageInstallPlan
         PartitionSizeGB = 0
         Confirmation = "EFFACER DISQUE $SelectedDiskNumber"
         Destructive = $true
-        Summary = "Effacer entièrement le disque $SelectedDiskNumber et le dédier à Atlas"
+        Summary = "Effacer entièrement le disque $SelectedDiskNumber et le dédier à Sideron"
     }
 }
 
-function Set-AtlasDialogButtonStyle
+function Set-SideronDialogButtonStyle
 {
     param(
         [System.Windows.Controls.Button]$Button,
@@ -1480,7 +1519,7 @@ function Show-InstallConfirmation
     )
 
     $Dialog = New-Object System.Windows.Window
-    $Dialog.Title = "Atlas"
+    $Dialog.Title = "SIDERON"
     $Dialog.Width = 560
     $Dialog.SizeToContent = "Height"
     $Dialog.MinHeight = 250
@@ -1492,6 +1531,11 @@ function Show-InstallConfirmation
     $Dialog.Background = "Transparent"
     $Dialog.Owner = $Window
     $Dialog.ShowInTaskbar = $false
+    Set-SideronAdaptiveWindow `
+        -TargetWindow $Dialog `
+        -PreferredWidth 560 `
+        -PreferredHeight 520 `
+        -ScreenMargin 40
 
     $Shell = New-Object System.Windows.Controls.Border
     $Shell.Background = "#0B1018"
@@ -1506,7 +1550,7 @@ function Show-InstallConfirmation
     $Root.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition -Property @{ Height = "Auto" }))
     $Root.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition -Property @{ Height = "64" }))
 
-    # Barre de titre Atlas.
+    # Barre de titre Sideron.
     $TitleBar = New-Object System.Windows.Controls.Grid
     $TitleBar.Background = "#0E1721"
     [System.Windows.Controls.Grid]::SetRow($TitleBar, 0)
@@ -1515,7 +1559,7 @@ function Show-InstallConfirmation
     $TitleBar.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition -Property @{ Width = "44" }))
 
     $WindowTitle = New-Object System.Windows.Controls.TextBlock
-    $WindowTitle.Text = "Atlas"
+    $WindowTitle.Text = "SIDERON"
     $WindowTitle.Margin = "16,0,0,0"
     $WindowTitle.VerticalAlignment = "Center"
     $WindowTitle.FontSize = 12
@@ -1617,8 +1661,8 @@ function Show-InstallConfirmation
     }
 
     Add-SummaryRow -Row 0 -Label "Stockage" -Value $Plan.Summary
-    Add-SummaryRow -Row 1 -Label "Application" -Value "C:\Program Files\Atlas"
-    Add-SummaryRow -Row 2 -Label "Service" -Value "AtlasV2Service"
+    Add-SummaryRow -Row 1 -Label "Application" -Value "C:\Program Files\SIDERON"
+    Add-SummaryRow -Row 2 -Label "Service" -Value "SIDERONService"
     $StartupSummary = "Désactivé"
 
     if ($StartupCheckBox.IsChecked -eq $true)
@@ -1670,7 +1714,7 @@ function Show-InstallConfirmation
         $WarningCard.Margin = "0,12,0,0"
 
         $Warning = New-Object System.Windows.Controls.TextBlock
-        $Warning.Text = "La partition sélectionnée sera redimensionnée pour créer le volume ATLAS."
+        $Warning.Text = "La partition sélectionnée sera redimensionnée pour créer le volume SIDERON."
         $Warning.FontSize = 11
         $Warning.Foreground = "#F3C97D"
         $Warning.TextWrapping = "Wrap"
@@ -1703,7 +1747,7 @@ function Show-InstallConfirmation
     $Cancel.Background = "#101821"
     $Cancel.Foreground = "#EEF7FC"
     $Cancel.BorderBrush = "#31566E"
-    Set-AtlasDialogButtonStyle -Button $Cancel -Primary $false
+    Set-SideronDialogButtonStyle -Button $Cancel -Primary $false
 
     $Cancel.Add_Click({
         $Dialog.DialogResult = $false
@@ -1713,14 +1757,14 @@ function Show-InstallConfirmation
     $Buttons.Children.Add($Cancel) | Out-Null
 
     $Confirm = New-Object System.Windows.Controls.Button
-    $Confirm.Content = "Installer Atlas"
+    $Confirm.Content = "Installer Sideron"
     $Confirm.MinWidth = 135
     $Confirm.Height = 34
     $Confirm.Padding = "14,6"
     $Confirm.Background = "#1D6C8E"
     $Confirm.Foreground = "#FFFFFF"
     $Confirm.BorderBrush = "#56A8C8"
-    Set-AtlasDialogButtonStyle -Button $Confirm -Primary $true
+    Set-SideronDialogButtonStyle -Button $Confirm -Primary $true
 
     $Confirm.Add_Click({
         $Dialog.DialogResult = $true
@@ -1733,6 +1777,11 @@ function Show-InstallConfirmation
 
     $Shell.Child = $Root
     $Dialog.Content = $Shell
+    Set-SideronAdaptiveWindow `
+        -TargetWindow $Dialog `
+        -PreferredWidth 560 `
+        -PreferredHeight 520 `
+        -ScreenMargin 40
 
     $Result = $Dialog.ShowDialog()
 
@@ -1785,9 +1834,9 @@ function Get-StorageRootFromOutput
 
     foreach ($Line in ($Output -split "[`r`n]+"))
     {
-        if ($Line.StartsWith("ATLAS_STORAGE_ROOT="))
+        if ($Line.StartsWith("SIDERON_STORAGE_ROOT="))
         {
-            return $Line.Substring("ATLAS_STORAGE_ROOT=".Length).Trim()
+            return $Line.Substring("SIDERON_STORAGE_ROOT=".Length).Trim()
         }
     }
 
@@ -1795,13 +1844,13 @@ function Get-StorageRootFromOutput
 }
 
 
-function New-AtlasInstallProgressWindow
+function New-SideronInstallProgressWindow
 {
     [xml]$ProgressXaml = @"
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Installation Atlas"
+    Title="Installation Sideron"
     Width="620"
     Height="248"
     WindowStartupLocation="CenterScreen"
@@ -1830,7 +1879,7 @@ function New-AtlasInstallProgressWindow
 
             <TextBlock
                 Grid.Row="0"
-                Text="INSTALLATION ATLAS"
+                Text="INSTALLATION SIDERON"
                 FontFamily="Segoe UI"
                 FontSize="20"
                 FontWeight="Bold"
@@ -1907,7 +1956,7 @@ function New-AtlasInstallProgressWindow
 
                 <Button
                     x:Name="CompactLaunchButton"
-                    Content="Lancer Atlas"
+                    Content="Lancer Sideron"
                     Width="130"
                     Height="34"
                     Padding="12,5"
@@ -1923,6 +1972,10 @@ function New-AtlasInstallProgressWindow
 
     $ProgressReader = New-Object System.Xml.XmlNodeReader $ProgressXaml
     $ProgressWindow = [Windows.Markup.XamlReader]::Load($ProgressReader)
+    Set-SideronAdaptiveWindow `
+        -TargetWindow $ProgressWindow `
+        -PreferredWidth 620 `
+        -PreferredHeight 248
 
     $ProgressWindow.Tag = [PSCustomObject]@{
         VersionText = $ProgressWindow.FindName("CompactVersionText")
@@ -1962,13 +2015,13 @@ function New-AtlasInstallProgressWindow
         }
     })
 
-    if (Test-Path $AtlasInstallerIconPath)
+    if (Test-Path $SideronInstallerIconPath)
     {
         try
         {
             $ProgressWindow.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create(
                 [System.Uri]::new(
-                    $AtlasInstallerIconPath
+                    $SideronInstallerIconPath
                 )
             )
         }
@@ -2025,7 +2078,7 @@ function Update-CompactInstallProgress
     )
 }
 
-function Show-AtlasInstallCompletion
+function Show-SideronInstallCompletion
 {
     param(
         [System.Windows.Window]$ProgressWindow
@@ -2033,7 +2086,7 @@ function Show-AtlasInstallCompletion
 
     $Controls = $ProgressWindow.Tag
 
-    $Controls.VersionText.Text = "Atlas a été installé avec succès."
+    $Controls.VersionText.Text = "Sideron a été installé avec succès."
     $Controls.StatusText.Text = "Installation terminée"
     $Controls.StatusText.FontSize = 16
     $Controls.StatusText.FontWeight = "SemiBold"
@@ -2061,7 +2114,7 @@ function Show-AtlasInstallCompletion
     return [bool]$Controls.LaunchRequested
 }
 
-function Read-AtlasInstallProgress
+function Read-SideronInstallProgress
 {
     param(
         [string]$ProgressFile
@@ -2129,7 +2182,7 @@ function Invoke-HiddenPowerShellWithInstallProgress
 
     while (-not $Process.HasExited)
     {
-        $Progress = Read-AtlasInstallProgress `
+        $Progress = Read-SideronInstallProgress `
             -ProgressFile $ProgressFile
 
         if ($null -ne $Progress)
@@ -2175,7 +2228,7 @@ function Invoke-HiddenPowerShellWithInstallProgress
     $CapturedOutput = $OutputTask.GetAwaiter().GetResult()
     $CapturedError = $ErrorTask.GetAwaiter().GetResult()
 
-    $FinalProgress = Read-AtlasInstallProgress `
+    $FinalProgress = Read-SideronInstallProgress `
         -ProgressFile $ProgressFile
 
     if ($null -ne $FinalProgress)
@@ -2246,7 +2299,7 @@ function Set-InstallerBusy
 }
 
 
-function Invoke-AtlasInstallation
+function Invoke-SideronInstallation
 {
     Remove-Item `
         -Path $InstallerDiagnosticLogPath `
@@ -2263,10 +2316,10 @@ function Invoke-AtlasInstallation
 
     Set-InstallerBusy -Busy $true
 
-    $ProgressWindow = New-AtlasInstallProgressWindow
+    $ProgressWindow = New-SideronInstallProgressWindow
     $ProgressControls = $ProgressWindow.Tag
 
-    $ProgressControls.VersionText.Text = "Installation d’Atlas..."
+    $ProgressControls.VersionText.Text = "Installation d’Sideron..."
 
     $Window.Hide()
     $ProgressWindow.Show()
@@ -2334,24 +2387,24 @@ if ($StorageResult.ExitCode -ne 0)
         {
             if ($Plan.Mode -eq "Folder")
             {
-                $StorageRoot = "C:\Atlas"
+                $StorageRoot = "C:\SIDERON"
             }
             else
             {
-                throw "Impossible de déterminer la racine du volume ATLAS créé."
+                throw "Impossible de déterminer la racine du volume SIDERON créé."
             }
         }
 
         Update-CompactInstallProgress `
             -ProgressWindow $ProgressWindow `
             -Value 45 `
-            -Text "Stockage prêt · préparation d’Atlas..."
+            -Text "Stockage prêt · préparation d’Sideron..."
 
-        $InstallScript = Join-Path $PSScriptRoot "install_atlas.ps1"
+        $InstallScript = Join-Path $PSScriptRoot "install_sideron.ps1"
 
         if (-not (Test-Path $InstallScript))
         {
-            throw "install_atlas.ps1 est introuvable."
+            throw "install_sideron.ps1 est introuvable."
         }
 
         $EscapedInstallScript = $InstallScript.Replace("'", "''")
@@ -2370,7 +2423,7 @@ if ($StorageResult.ExitCode -ne 0)
 
         $ProgressFile = Join-Path `
             $env:TEMP `
-            ("AtlasInstallProgress-" + [Guid]::NewGuid().ToString("N") + ".json")
+            ("SideronInstallProgress-" + [Guid]::NewGuid().ToString("N") + ".json")
 
         Remove-Item `
             -Path $ProgressFile `
@@ -2383,7 +2436,7 @@ if ($StorageResult.ExitCode -ne 0)
         Update-CompactInstallProgress `
             -ProgressWindow $ProgressWindow `
             -Value 46 `
-            -Text "Installation des composants Atlas..."
+            -Text "Installation des composants Sideron..."
 
         $InstallResult = Invoke-HiddenPowerShellWithInstallProgress `
             -Command $InstallCommand `
@@ -2402,7 +2455,7 @@ if ($StorageResult.ExitCode -ne 0)
             if ([string]::IsNullOrWhiteSpace($DetailedInstallError))
             {
                 $DetailedInstallError = (
-                    "Le processus d'installation Atlas s'est terminé " +
+                    "Le processus d'installation Sideron s'est terminé " +
                     "avec le code $($InstallResult.ExitCode)."
                 )
             }
@@ -2410,7 +2463,7 @@ if ($StorageResult.ExitCode -ne 0)
             $DetailedInstallError = $DetailedInstallError.Trim()
 
             throw (
-                "L'installation d'Atlas a échoué.`n`n" +
+                "L'installation d'Sideron a échoué.`n`n" +
                 $DetailedInstallError
             )
         }
@@ -2422,15 +2475,15 @@ if ($StorageResult.ExitCode -ne 0)
 
         Start-Sleep -Milliseconds 500
 
-        $InstalledAtlasExe = "C:\Program Files\Atlas\Atlas.exe"
-        $LaunchAtlas = Show-AtlasInstallCompletion `
+        $InstalledSideronExe = "C:\Program Files\SIDERON\SIDERON.exe"
+        $LaunchSideron = Show-SideronInstallCompletion `
             -ProgressWindow $ProgressWindow
 
-        if ($LaunchAtlas -and (Test-Path $InstalledAtlasExe))
+        if ($LaunchSideron -and (Test-Path $InstalledSideronExe))
         {
             Start-Process `
-                -FilePath $InstalledAtlasExe `
-                -WorkingDirectory (Split-Path $InstalledAtlasExe -Parent)
+                -FilePath $InstalledSideronExe `
+                -WorkingDirectory (Split-Path $InstalledSideronExe -Parent)
         }
 
         if ($null -ne $ProgressWindow)
@@ -2462,8 +2515,8 @@ if ($StorageResult.ExitCode -ne 0)
             $DiagnosticProgressFile = [string]$ProgressFile
         }
 
-        Write-AtlasInstallerDiagnostic `
-            -Stage "Invoke-AtlasInstallation" `
+        Write-SideronInstallerDiagnostic `
+            -Stage "Invoke-SideronInstallation" `
             -Exception $InstallationException `
             -StorageResult $DiagnosticStorageResult `
             -InstallResult $DiagnosticInstallResult `
@@ -2498,7 +2551,7 @@ if ($StorageResult.ExitCode -ne 0)
             [System.Windows.MessageBox]::Show(
                 $Window,
                 $ErrorMessage,
-                "Échec de l'installation Atlas",
+                "Échec de l'installation Sideron",
                 [System.Windows.MessageBoxButton]::OK,
                 [System.Windows.MessageBoxImage]::Error
             ) | Out-Null
@@ -2596,7 +2649,7 @@ $SizeTextBox.Add_LostFocus({
 
 
 $InstallButton.Add_Click({
-    Invoke-AtlasInstallation
+    Invoke-SideronInstallation
 })
 
 $CloseButton.Add_Click({

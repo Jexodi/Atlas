@@ -17,25 +17,25 @@ from atlas.service.protocol import (
 )
 
 
-class AtlasServiceError(
+class SideronServiceError(
     RuntimeError
 ):
     pass
 
 
-class AtlasServiceUnavailableError(
-    AtlasServiceError
+class SideronServiceUnavailableError(
+    SideronServiceError
 ):
     pass
 
 
-class AtlasServiceProtocolError(
-    AtlasServiceError
+class SideronServiceProtocolError(
+    SideronServiceError
 ):
     pass
 
 
-class AtlasServiceClient:
+class SideronServiceClient:
 
     def __init__(
         self,
@@ -72,7 +72,7 @@ class AtlasServiceClient:
         if self.logger is not None:
 
             self.logger.debug(
-                "AtlasService request : %s %s",
+                "SideronService request : %s %s",
                 request.action,
                 request.parameters,
             )
@@ -88,22 +88,22 @@ class AtlasServiceClient:
         except PipeUnavailableError as exc:
 
             raise (
-                AtlasServiceUnavailableError(
-                    "AtlasService n'est pas "
+                SideronServiceUnavailableError(
+                    "SideronService n'est pas "
                     "disponible."
                 )
             ) from exc
 
         except PipeAccessDeniedError as exc:
 
-            raise AtlasServiceError(
-                "Atlas n'est pas autorisé "
-                "à communiquer avec AtlasService."
+            raise SideronServiceError(
+                "Sideron n'est pas autorisé "
+                "à communiquer avec SideronService."
             ) from exc
 
         except PipeClientError as exc:
 
-            raise AtlasServiceError(
+            raise SideronServiceError(
                 str(
                     exc
                 )
@@ -120,7 +120,7 @@ class AtlasServiceClient:
         except ServiceProtocolError as exc:
 
             raise (
-                AtlasServiceProtocolError(
+                SideronServiceProtocolError(
                     str(
                         exc
                     )
@@ -132,15 +132,15 @@ class AtlasServiceClient:
             != PROTOCOL_VERSION
         ):
 
-            raise AtlasServiceProtocolError(
+            raise SideronServiceProtocolError(
                 "Version du protocole "
-                "AtlasService incompatible."
+                "SideronService incompatible."
             )
 
         if self.logger is not None:
 
             self.logger.debug(
-                "AtlasService response : "
+                "SideronService response : "
                 "%s | %s",
                 response.success,
                 response.message,

@@ -12,29 +12,29 @@ from typing import Any
 from atlas.core.event_bus import EventBus
 
 
-class AtlasUiBridge:
-    """Pont IPC local non bloquant entre Atlas Core et Atlas.UI.
+class SideronUiBridge:
+    """Pont IPC local non bloquant entre Sideron Core et Sideron.UI.
 
     Deux Named Pipes unidirectionnels sont utilisés :
 
-    - Atlas.CoreToUI.v1 : Core Python -> Atlas.UI
-    - Atlas.UIToCore.v1 : Atlas.UI -> Core Python
+    - SIDERON.CoreToUI.v1 : Core Python -> Sideron.UI
+    - Sideron.UIToCore.v1 : Sideron.UI -> Core Python
 
     IMPORTANT :
     aucune écriture Named Pipe n'est effectuée depuis le thread
     principal du Core. Les messages sortants passent par une queue
     et sont écrits par un thread IPC dédié.
 
-    Ainsi, Atlas continue de fonctionner même si l'UI est lente,
+    Ainsi, Sideron continue de fonctionner même si l'UI est lente,
     absente, redémarre ou si Windows bloque momentanément un pipe.
     """
 
     CORE_TO_UI_PIPE_NAME = (
-        "Atlas.CoreToUI.v1"
+        "SIDERON.CoreToUI.v1"
     )
 
     UI_TO_CORE_PIPE_NAME = (
-        "Atlas.UIToCore.v1"
+        "Sideron.UIToCore.v1"
     )
 
     CORE_TO_UI_PIPE_PATH = (
@@ -149,13 +149,13 @@ class AtlasUiBridge:
 
         self._writer_thread = threading.Thread(
             target=self._writer_loop,
-            name="AtlasUiBridgeWriter",
+            name="SideronUiBridgeWriter",
             daemon=True,
         )
 
         self._connection_thread = threading.Thread(
             target=self._connection_loop,
-            name="AtlasUiBridgeReader",
+            name="SideronUiBridgeReader",
             daemon=True,
         )
 
@@ -163,7 +163,7 @@ class AtlasUiBridge:
         self._connection_thread.start()
 
         self._logger.info(
-            "Pont Atlas.UI démarré "
+            "Pont Sideron.UI démarré "
             "(IPC non bloquant)."
         )
 
@@ -207,7 +207,7 @@ class AtlasUiBridge:
         self._clear_outbox()
 
         self._logger.info(
-            "Pont Atlas.UI arrêté."
+            "Pont Sideron.UI arrêté."
         )
 
     def send_event(
@@ -218,7 +218,7 @@ class AtlasUiBridge:
         """Place un événement dans la file d'envoi.
 
         Cette méthode ne réalise AUCUNE E/S Named Pipe.
-        Elle est donc sûre à appeler depuis le thread principal Atlas.
+        Elle est donc sûre à appeler depuis le thread principal Sideron.
         """
 
         if not self._connected.is_set():
@@ -251,7 +251,7 @@ class AtlasUiBridge:
         except queue.Full:
 
             self._logger.warning(
-                "File IPC Atlas.UI pleine ; "
+                "File IPC Sideron.UI pleine ; "
                 "message abandonné."
             )
 
@@ -284,7 +284,7 @@ class AtlasUiBridge:
                         )
 
                         self._logger.debug(
-                            "Atlas.UI IPC indisponible : %s",
+                            "Sideron.UI IPC indisponible : %s",
                             exc,
                         )
 
@@ -303,7 +303,7 @@ class AtlasUiBridge:
                 if was_connected:
 
                     self._logger.info(
-                        "Atlas.UI IPC déconnecté."
+                        "Sideron.UI IPC déconnecté."
                     )
 
             if not self._stop_event.is_set():
@@ -379,7 +379,7 @@ class AtlasUiBridge:
         self._connected.set()
 
         self._logger.info(
-            "Atlas Core connecté à Atlas.UI "
+            "Sideron Core connecté à Sideron.UI "
             "(2 pipes IPC non bloquants)."
         )
 
@@ -387,7 +387,7 @@ class AtlasUiBridge:
             {
                 "type": "hello",
                 "source": "core",
-                "version": "3.3.5-rc.4",
+                "version": "3.3.6",
                 "state": self._state_snapshot(),
             }
         )
@@ -429,7 +429,7 @@ class AtlasUiBridge:
             ):
 
                 self._logger.warning(
-                    "Message Atlas.UI IPC invalide ignoré."
+                    "Message Sideron.UI IPC invalide ignoré."
                 )
 
                 continue
@@ -518,7 +518,7 @@ class AtlasUiBridge:
             ) as exc:
 
                 self._logger.debug(
-                    "Échec envoi IPC Core -> Atlas.UI : %s",
+                    "Échec envoi IPC Core -> Sideron.UI : %s",
                     exc,
                 )
 
@@ -545,7 +545,7 @@ class AtlasUiBridge:
         )
 
         self._logger.debug(
-            "IPC Atlas.UI -> Core : type=%s name=%s",
+            "IPC Sideron.UI -> Core : type=%s name=%s",
             message_type,
             name,
         )
@@ -553,7 +553,7 @@ class AtlasUiBridge:
         if message_type == "hello":
 
             self._logger.info(
-                "Handshake Atlas.UI reçu."
+                "Handshake Sideron.UI reçu."
             )
 
             return
@@ -572,7 +572,7 @@ class AtlasUiBridge:
             )
 
             self._logger.info(
-                "Ping Atlas.UI reçu ; "
+                "Ping Sideron.UI reçu ; "
                 "pong mis en file=%s.",
                 queued,
             )
@@ -594,7 +594,7 @@ class AtlasUiBridge:
             )
 
             self._logger.debug(
-                "Commande Atlas.UI reçue : %s",
+                "Commande Sideron.UI reçue : %s",
                 name,
             )
 
@@ -669,7 +669,7 @@ class AtlasUiBridge:
             if queued:
 
                 self._logger.debug(
-                    "IPC Core -> Atlas.UI mis en file : event=%s",
+                    "IPC Core -> Sideron.UI mis en file : event=%s",
                     event_name,
                 )
 

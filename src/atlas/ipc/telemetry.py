@@ -12,14 +12,14 @@ import psutil
 from atlas.system.powershell import run_fixed_powershell
 
 
-class AtlasTelemetryPublisher:
-    """Publie une télémétrie système légère vers Atlas.UI.
+class SideronTelemetryPublisher:
+    """Publie une télémétrie système légère vers Sideron.UI.
 
     Ce composant est strictement en lecture seule.
     Il n'exécute aucun Skill et aucune commande libre.
 
     Les informations réseau Windows plus détaillées sont obtenues via
-    un script PowerShell fixe défini dans Atlas, jamais depuis OpenAI.
+    un script PowerShell fixe défini dans Sideron, jamais depuis OpenAI.
     """
 
     INTERVAL_SECONDS = 2.0
@@ -133,14 +133,14 @@ if ($null -eq $selected) {
 
         self._thread = threading.Thread(
             target=self._run,
-            name="AtlasTelemetry",
+            name="SideronTelemetry",
             daemon=True,
         )
 
         self._thread.start()
 
         self._logger.info(
-            "Télémétrie Atlas.UI démarrée."
+            "Télémétrie Sideron.UI démarrée."
         )
 
     def stop(
@@ -161,7 +161,7 @@ if ($null -eq $selected) {
         self._thread = None
 
         self._logger.info(
-            "Télémétrie Atlas.UI arrêtée."
+            "Télémétrie Sideron.UI arrêtée."
         )
 
     def _run(
@@ -186,7 +186,7 @@ if ($null -eq $selected) {
 
             except Exception as exc:
                 self._logger.debug(
-                    "Télémétrie Atlas.UI indisponible : %s",
+                    "Télémétrie Sideron.UI indisponible : %s",
                     exc,
                 )
 

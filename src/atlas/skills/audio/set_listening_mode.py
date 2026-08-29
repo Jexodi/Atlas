@@ -10,9 +10,9 @@ class SetListeningModeSkill(Skill):
     name = "audio.set_listening_mode"
 
     description = (
-        "Change le mode d'écoute vocale d'Atlas. "
+        "Change le mode d'écoute vocale d'Sideron. "
         "Utilise wake_word pour le mode vocal, Discord ou lorsque "
-        "l'utilisateur veut qu'Atlas attende le mot de réveil. "
+        "l'utilisateur veut qu'Sideron attende le mot de réveil. "
         "Utilise continuous pour le mode normal ou l'écoute continue."
     )
 
@@ -89,7 +89,7 @@ class SetListeningModeSkill(Skill):
         if active_mode == ListeningMode.WAKE_WORD:
             message = (
                 "Mode vocal activé. "
-                "Atlas attend désormais le mot de réveil."
+                "Sideron attend désormais le mot de réveil."
             )
         else:
             message = (

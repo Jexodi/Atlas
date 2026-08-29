@@ -39,5 +39,5 @@ class ListeningMode(str, Enum):
             return aliases[normalized]
         except KeyError as exc:
             raise ValueError(
-                f"Mode d'écoute Atlas invalide : {value!r}"
+                f"Mode d'écoute Sideron invalide : {value!r}"
             ) from exc

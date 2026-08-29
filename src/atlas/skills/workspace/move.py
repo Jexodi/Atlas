@@ -9,8 +9,8 @@ from atlas.skills.base import (
 )
 
 from atlas.storage import (
-    AtlasStorage,
-    AtlasStorageError,
+    SideronStorage,
+    SideronStorageError,
 )
 
 
@@ -20,7 +20,7 @@ class MoveWorkspaceItemSkill(Skill):
 
     description = (
         "Déplace un fichier ou un dossier uniquement "
-        "à l'intérieur de la zone sécurisée d'Atlas."
+        "à l'intérieur de la zone sécurisée d'Sideron."
     )
 
     risk_level = RiskLevel.LOCAL_MODIFICATION
@@ -35,14 +35,14 @@ class MoveWorkspaceItemSkill(Skill):
                 "type": "string",
                 "description": (
                     "Chemin relatif de l'élément à déplacer "
-                    "dans la zone Atlas."
+                    "dans la zone Sideron."
                 ),
             },
             "destination_directory": {
                 "type": "string",
                 "description": (
                     "Chemin relatif du dossier de destination "
-                    "dans la zone Atlas."
+                    "dans la zone Sideron."
                 ),
             },
         },
@@ -55,7 +55,7 @@ class MoveWorkspaceItemSkill(Skill):
 
     def __init__(
         self,
-        storage: AtlasStorage,
+        storage: SideronStorage,
     ) -> None:
 
         self.storage = storage
@@ -106,7 +106,7 @@ class MoveWorkspaceItemSkill(Skill):
                 ],
             )
 
-        except AtlasStorageError as exc:
+        except SideronStorageError as exc:
 
             return SkillResult(
                 success=False,

@@ -9,8 +9,8 @@ from atlas.skills.base import (
 )
 
 from atlas.storage import (
-    AtlasStorage,
-    AtlasStorageError,
+    SideronStorage,
+    SideronStorageError,
 )
 
 
@@ -20,7 +20,7 @@ class RenameWorkspaceItemSkill(Skill):
 
     description = (
         "Renomme un fichier ou un dossier uniquement "
-        "à l'intérieur de la zone sécurisée d'Atlas."
+        "à l'intérieur de la zone sécurisée d'Sideron."
     )
 
     risk_level = RiskLevel.LOCAL_MODIFICATION
@@ -34,7 +34,7 @@ class RenameWorkspaceItemSkill(Skill):
             "path": {
                 "type": "string",
                 "description": (
-                    "Chemin relatif de l'élément dans la zone Atlas."
+                    "Chemin relatif de l'élément dans la zone Sideron."
                 ),
             },
             "new_name": {
@@ -54,7 +54,7 @@ class RenameWorkspaceItemSkill(Skill):
 
     def __init__(
         self,
-        storage: AtlasStorage,
+        storage: SideronStorage,
     ) -> None:
 
         self.storage = storage
@@ -102,7 +102,7 @@ class RenameWorkspaceItemSkill(Skill):
                 new_name=kwargs["new_name"],
             )
 
-        except AtlasStorageError as exc:
+        except SideronStorageError as exc:
 
             return SkillResult(
                 success=False,
