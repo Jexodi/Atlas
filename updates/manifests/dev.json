@@ -1,8 +1,8 @@
 {
-  "version": "3.3.5-dev",
-  "channel": "dev",
-  "url": "https://github.com/Jexodi/Atlas/releases/download/v3.3.5-dev/Atlas-3.3.5-dev.exe",
-  "sha256": "b13c6b8c7d89435041759b7a84b8c03289702dbb4daedcc7e41e031b94cce42f",
-  "notes": "Canal de développement Atlas 3.3.5-dev.",
-  "published_utc": "2026-08-26T00:55:00Z"
+    "version":  "3.3.6-dev",
+    "channel":  "dev",
+    "url":  "https://github.com/Jexodi/SIDERON/releases/download/v3.3.6-dev/SIDERON-3.3.6-dev.exe",
+    "sha256":  "74f87261a0e53cb03532a1aa4324568c80c996ee6afd878aa041368f78c00007",
+    "notes":  "Sideron 3.3.6-dev — Version de développement du canal DEV.",
+    "published_utc":  "2026-08-29T16:51:06Z"
 }
