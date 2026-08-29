@@ -1,8 +1,8 @@
 {
-    "version":  "3.3.4",
+    "version":  "3.3.6",
     "channel":  "release",
-    "url":  "https://github.com/Jexodi/Atlas/releases/download/v3.3.4/Atlas-3.3.4.exe",
-    "sha256":  "750d9225707ff5496611b52997b88040d354b47787d7f51e52d534c96e4e441b",
-    "notes":  "Atlas 3.3.4 — Version stable du canal Release.",
-    "published_utc":  "2026-08-28T23:55:58Z"
+    "url":  "https://github.com/Jexodi/SIDERON/releases/download/v3.3.6/SIDERON-3.3.6.exe",
+    "sha256":  "180572eb1b2dffff371ef3e93598ada24c339b5db198f58234e4a08e10b2cdc0",
+    "notes":  "Sideron 3.3.6 — Version stable du canal Release.",
+    "published_utc":  "2026-08-29T18:30:05Z"
 }
