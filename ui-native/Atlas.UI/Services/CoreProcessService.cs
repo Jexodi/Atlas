@@ -204,6 +204,9 @@ public sealed class CoreProcessService
                         true,
                 };
 
+            UiLog.Info(
+                $"Atlas packaged Core selected: {executable}");
+
             packagedStartInfo.Environment[
                 "ATLAS_CONFIG_PATH"
             ] = AtlasConfigService.GetRuntimeConfigPath();
@@ -249,6 +252,9 @@ public sealed class CoreProcessService
                     true,
             };
 
+        UiLog.Info(
+            $"Atlas development Core selected: {mainCore}");
+
         startInfo.ArgumentList.Add(
             mainCore);
 
@@ -264,8 +270,8 @@ public sealed class CoreProcessService
         var startingPoints =
             new[]
             {
-                Directory.GetCurrentDirectory(),
                 AppContext.BaseDirectory,
+                Directory.GetCurrentDirectory(),
                 @"C:\Atlas",
             };
 

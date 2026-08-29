@@ -61,7 +61,7 @@ $InstallerMutexName = "Global\Atlas.Setup.Installation"
 $InstallerMutex = $null
 $InstallerMutexOwned = $false
 
-$AtlasVersion = "3.3.5"
+$AtlasVersion = "3.3.5-rc.4"
 $AtlasPublisher = "Atlas"
 $UninstallKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Atlas"
 $UninstallExeInstalled = Join-Path $InstallRoot "Atlas.Uninstall.exe"
@@ -217,9 +217,20 @@ function Import-ExistingUpdatePreferences
     {
         $ExistingStorageRoot = [string]$ExistingConfig.storage.root
 
-        if (-not [string]::IsNullOrWhiteSpace($ExistingStorageRoot))
+        # Une mise à jour conserve uniquement un véritable volume dédié ATLAS.
+        # Les anciens dossiers locaux ne doivent jamais remplacer le choix
+        # actuel de l'installateur, dont la valeur locale est C:\Atlas.
+        if ($ExistingStorageRoot -match "^[A-Za-z]:\\$")
         {
-            $script:StorageRoot = $ExistingStorageRoot
+            $ExistingDriveLetter = $ExistingStorageRoot.Substring(0, 1)
+            $ExistingVolume = Get-Volume `
+                -DriveLetter $ExistingDriveLetter `
+                -ErrorAction SilentlyContinue
+
+            if ($null -ne $ExistingVolume -and $ExistingVolume.FileSystemLabel -eq "ATLAS")
+            {
+                $script:StorageRoot = $ExistingStorageRoot
+            }
         }
     }
 
@@ -2048,7 +2059,7 @@ Write-UpdateProgress `
     -Message "Initialisation d’Atlas..."
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host " Installation Atlas 3.3.5" -ForegroundColor Cyan
+Write-Host " Installation Atlas 3.3.5-rc.4" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 

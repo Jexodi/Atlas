@@ -1,6 +1,5 @@
-import os
-
 from openai import AsyncOpenAI
+from atlas.ai.access import create_client
 
 from atlas.ai.audio import (
     utterance_to_wav,
@@ -29,24 +28,12 @@ class OpenAIManager:
         config,
     ) -> None:
 
-        api_key = os.getenv(
-            "OPENAI_API_KEY"
-        )
-
-        if not api_key:
-
-            raise RuntimeError(
-                "OPENAI_API_KEY absente du fichier .env."
-            )
-
         self.transcription_model = config.get(
             "openai.transcription_model",
             "gpt-transcribe",
         )
 
-        self.client = AsyncOpenAI(
-            api_key=api_key
-        )
+        self.client = create_client()
 
         self.logger.info(
             "Client OpenAI initialisé."

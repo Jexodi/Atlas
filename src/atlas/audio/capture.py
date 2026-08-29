@@ -133,3 +133,33 @@ class MicrophoneCapture:
                 self._stream = None
 
         self._running = False
+
+    def switch_device(self, device_index):
+        """Keep the capture task alive; restore the previous stream on failure."""
+        previous = self.device_index
+        was_running = self._running
+        if not was_running:
+            raise RuntimeError("Capture inactive : redémarrez le Core avant de changer de micro.")
+        self.stop()
+        try:
+            self._open_device(device_index)
+        except Exception as error:
+            try:
+                self._open_device(previous)
+            except Exception:
+                raise RuntimeError("Microphone indisponible et restauration impossible. Redémarrez le Core.") from error
+            raise RuntimeError("Impossible d’ouvrir ce microphone ; ancien micro restauré.") from error
+
+    def _open_device(self, index):
+        stream = sd.InputStream(
+            device=index, channels=self.channels, samplerate=self.sample_rate,
+            blocksize=self.block_size, dtype="float32", callback=self._audio_callback,
+        )
+        try:
+            stream.start()
+        except Exception:
+            stream.close()
+            raise
+        self._stream = stream
+        self.device_index = index
+        self._running = True

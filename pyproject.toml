@@ -1,6 +1,6 @@
 [project]
 name = "atlas"
-version = "3.3.5"
+version = "3.3.5-rc.4"
 description = "Atlas V2 - Assistant personnel intelligent pour Windows"
 requires-python = ">=3.12"
 

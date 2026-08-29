@@ -12,7 +12,7 @@
     <Description>Atlas Desktop</Description>
     <Version>3.3.5</Version>
     <FileVersion>3.3.5.0</FileVersion>
-    <InformationalVersion>3.3.5</InformationalVersion>
+    <InformationalVersion>3.3.5-rc.4</InformationalVersion>
 
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>

@@ -777,7 +777,7 @@
 
                     <TextBlock
                         x:Name="StorageWidgetRootText"
-                        Text="C:\AtlasData"
+                        Text="C:\Atlas"
                         FontSize="13"
                         FontWeight="SemiBold"
                         TextTrimming="CharacterEllipsis"
@@ -2015,8 +2015,8 @@
                                         SelectionChanged="SettingsStorageComboBox_SelectionChanged">
 
                                         <ComboBoxItem
-                                            Content="C:\AtlasData"
-                                            Tag="C:\AtlasData" />
+                                            Content="C:\Atlas"
+                                            Tag="C:\Atlas" />
 
                                         <ComboBoxItem
                                             Content="A:\"
@@ -2052,7 +2052,7 @@
                                             x:Name="HomeVersionText"
                                             Grid.Column="1"
                                             VerticalAlignment="Center"
-                                            Text="Atlas 3.3.5"
+                                            Text="Atlas 3.3.5-rc.4"
                                             FontSize="13"
                                             FontWeight="SemiBold"
                                             Foreground="#D7EAF5" />
@@ -2911,10 +2911,28 @@
                                     <StackPanel Spacing="14">
 
                                         <TextBlock
-                                            Text="MODE D’ÉCOUTE"
+                                            Text="ENTRÉE, SORTIE AUDIO ET MODE D’ÉCOUTE"
                                             FontSize="9"
                                             CharacterSpacing="140"
                                             Foreground="#729FB7" />
+
+                                        <ComboBox x:Name="MicrophoneComboBox"
+                                            Header="Périphérique d’entrée — microphone"
+                                            HorizontalAlignment="Stretch"
+                                            PlaceholderText="Démarrez le Core pour choisir un micro"
+                                            SelectionChanged="MicrophoneComboBox_SelectionChanged" />
+                                        <TextBlock x:Name="MicrophoneStatusText" TextWrapping="Wrap"
+                                            Text="Par défaut, Atlas utilise le microphone Windows. Le choix est enregistré immédiatement."
+                                            Foreground="#95A9B9" FontSize="11" />
+
+                                        <ComboBox x:Name="SpeakerComboBox"
+                                            Header="Périphérique de sortie — haut-parleurs ou casque"
+                                            HorizontalAlignment="Stretch"
+                                            PlaceholderText="Démarrez le Core pour choisir une sortie"
+                                            SelectionChanged="SpeakerComboBox_SelectionChanged" />
+                                        <TextBlock x:Name="SpeakerStatusText" TextWrapping="Wrap"
+                                            Text="Par défaut Windows. Le choix est enregistré immédiatement."
+                                            Foreground="#95A9B9" FontSize="11" />
 
                                         <Grid ColumnSpacing="12">
 
@@ -3205,7 +3223,7 @@
                                             Foreground="#F1F1F5" />
 
                                         <TextBlock
-                                            Text="Atlas reste limité à sa zone dédiée. Seuls C:\AtlasData et A:\ sont autorisés comme racine de travail."
+                                            Text="Atlas reste limité à sa zone dédiée. Seuls C:\Atlas et la racine d’un volume dédié ATLAS sont autorisés comme racine de travail."
                                             TextWrapping="Wrap"
                                             FontSize="12"
                                             Foreground="#A0A2AF" />
@@ -3236,8 +3254,8 @@
                                             SelectionChanged="SettingsStorageComboBoxSecondary_SelectionChanged">
 
                                             <ComboBoxItem
-                                                Content="C:\AtlasData"
-                                                Tag="C:\AtlasData" />
+                                                Content="C:\Atlas"
+                                                Tag="C:\Atlas" />
 
                                             <ComboBoxItem
                                                 Content="A:\"
@@ -4029,7 +4047,7 @@
                                             x:Name="UpdateCurrentVersionText"
                                             Grid.Row="0"
                                             Grid.Column="1"
-                                            Text="3.3.5"
+                                            Text="3.3.5-rc.4"
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Foreground="#ECECF2" />
@@ -4234,14 +4252,14 @@
 
                                             <TextBlock
                                                 x:Name="AboutVersionText"
-                                                Text="Atlas 3.3.5"
+                                                Text="Atlas 3.3.5-rc.4"
                                                 FontSize="24"
                                                 FontWeight="SemiBold"
                                                 Foreground="#F1F1F5" />
 
                                             <TextBlock
                                                 x:Name="AboutChannelText"
-                                                Text="Canal Release"
+                                                Text="Canal Experimental"
                                                 FontSize="11"
                                                 Foreground="#9294A4" />
 

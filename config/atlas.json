@@ -1,7 +1,7 @@
 {
     "atlas":  {
                   "name":  "Atlas",
-                  "version":  "3.3.5",
+                  "version":  "3.3.5-rc.4",
                   "language":  "fr-FR"
               },
     "system":  {
@@ -25,11 +25,12 @@
                "start_with_windows":  false
            },
     "storage":  {
-                    "root":  "C:\\AtlasData"
+                    "root":  "C:\\Atlas"
                 },
     "audio":  {
                   "enabled":  true,
                   "input_device":  null,
+                  "output_device":  null,
                   "sample_rate":  24000,
                   "channels":  1,
                   "pre_roll_ms":  500,
@@ -66,8 +67,8 @@
                },
     "updates":  {
                     "enabled":  true,
-                    "channel":  "release",
+                    "channel":  "rc",
                     "check_on_startup":  true,
-                    "manifest_url":  "https://raw.githubusercontent.com/Jexodi/Atlas/main/updates/manifests/release.json"
+                    "manifest_url":  "https://raw.githubusercontent.com/Jexodi/Atlas/main/updates/manifests/rc.json"
                 }
 }

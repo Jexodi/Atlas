@@ -188,7 +188,7 @@ public sealed class AtlasIpcServerService
                     {
                         type = "hello",
                         source = "ui",
-                        version = "3.3.5",
+                        version = "3.3.5-rc.4",
                     });
 
                 while (

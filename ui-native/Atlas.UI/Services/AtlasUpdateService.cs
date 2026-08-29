@@ -7,10 +7,17 @@ namespace Atlas.UI.Services;
 
 public sealed class AtlasUpdateService
 {
-    private static readonly HttpClient HttpClient = new()
+    private static readonly HttpClient SharedHttpClient = new()
     {
         Timeout = TimeSpan.FromSeconds(15),
     };
+
+    private readonly HttpClient HttpClient;
+
+    public AtlasUpdateService(HttpClient? client = null)
+    {
+        HttpClient = client ?? SharedHttpClient;
+    }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -71,6 +78,34 @@ public sealed class AtlasUpdateService
 
         var current = AtlasSemanticVersion.Parse(currentVersion);
         var available = AtlasSemanticVersion.Parse(manifest.Version);
+
+        if (options.Channel.Equals("release", StringComparison.OrdinalIgnoreCase))
+        {
+            if (available.Stage != AtlasReleaseStage.Release)
+                throw new InvalidDataException("Le manifeste Release ne contient pas une version stable.");
+            if (available <= current)
+                return new AtlasUpdateCheckResult(AtlasUpdateStatus.ReinstallAvailable,
+                    currentVersion, manifest, $"La Release {manifest.Version} peut être réinstallée ou restaurée.");
+        }
+        if (options.Channel.Equals("rc", StringComparison.OrdinalIgnoreCase))
+        {
+            if (available.Stage != AtlasReleaseStage.ReleaseCandidate)
+                throw new InvalidDataException("Le manifeste Experimental ne contient pas une RC.");
+            // Fail closed if the stable reference cannot be fetched or validated.
+            var stableUri = new Uri(new Uri(options.ManifestUrl), "release.json");
+            using var stableResponse = await HttpClient.GetAsync(stableUri, cancellationToken);
+            stableResponse.EnsureSuccessStatusCode();
+            await using var stableStream = await stableResponse.Content.ReadAsStreamAsync(cancellationToken);
+            var stable = await JsonSerializer.DeserializeAsync<AtlasUpdateManifest>(stableStream, JsonOptions, cancellationToken);
+            if (stable is null || !string.Equals(stable.Channel, "release", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Référence Release absente ou invalide : téléchargement RC bloqué.");
+            var stableVersion = AtlasSemanticVersion.Parse(stable.Version);
+            if (stableVersion.Stage != AtlasReleaseStage.Release)
+                throw new InvalidDataException("La référence Release doit être stable.");
+            if (available <= stableVersion)
+                return new AtlasUpdateCheckResult(AtlasUpdateStatus.UpToDate, currentVersion, manifest,
+                    $"Experimental {manifest.Version} n’est pas supérieur à la Release {stable.Version}. Téléchargement désactivé.");
+        }
 
         if (available <= current)
         {
@@ -489,6 +524,7 @@ public enum AtlasUpdateStatus
     ChannelMismatch,
     UpToDate,
     UpdateAvailable,
+    ReinstallAvailable,
 }
 
 internal readonly record struct AtlasSemanticVersion(

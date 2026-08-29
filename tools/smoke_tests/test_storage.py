@@ -13,7 +13,7 @@ def main():
     print()
 
     storage = AtlasStorage(
-        r"C:\AtlasData"
+        r"C:\Atlas"
     )
 
     storage.initialize()

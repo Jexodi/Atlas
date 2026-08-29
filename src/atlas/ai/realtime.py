@@ -5,6 +5,7 @@ import json
 import numpy as np
 
 from openai import AsyncOpenAI
+from atlas.ai.access import create_client
 
 
 MAX_TOOL_OUTPUT_CHARS = 24000
@@ -87,7 +88,7 @@ class RealtimeManager:
             False,
         )
 
-        self.client = AsyncOpenAI()
+        self.client = create_client()
 
     async def run(self) -> None:
 
@@ -1178,7 +1179,6 @@ class RealtimeManager:
     ) -> None:
 
         self.tool_router = tool_router
-
 
 
 

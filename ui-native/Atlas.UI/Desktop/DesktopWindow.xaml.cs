@@ -96,6 +96,13 @@ public sealed partial class DesktopWindow : Window
     private bool _syncingUpdateChannel;
     private DisplayDescriptor? _atlasDisplay;
     private string _currentListeningMode = "continuous";
+    private bool _syncingMicrophone;
+    private bool _syncingSpeaker;
+    private bool _changingUpdateChannel;
+    private bool _updateOperationInProgress;
+    private bool _updateCheckAgain;
+    private bool _updateNoticeOpen;
+    private readonly HashSet<string> _notifiedUpdates = new();
     private bool _voiceSessionActive;
     private bool _applyingWidgetPreferences;
     private FrameworkElement? _draggedDesktopWidget;
@@ -110,10 +117,10 @@ public sealed partial class DesktopWindow : Window
     private const double DockWorkspaceGapDip = 10.0;
 
     private const string AtlasVersion =
-        "3.3.5";
+        "3.3.5-rc.4";
 
     private const string AtlasReleaseChannel =
-        "Release";
+        "Experimental";
 
     private bool _coreConnected;
 
@@ -3392,7 +3399,7 @@ public sealed partial class DesktopWindow : Window
                         "storage",
                         "disque",
                         "volume",
-                        "atlasdata",
+                        "dossier atlas",
                         "racine",
                         "espace",
                     }
@@ -4038,6 +4045,129 @@ public sealed partial class DesktopWindow : Window
 
         _ = _ipc.SendCommandAsync(
             "audio.get_listening_mode");
+        // Keep the two established commands for compatibility with a Core
+        // that has not yet been rebuilt with the combined inventory command.
+        _ = _ipc.SendCommandAsync("audio.get_input_devices");
+        _ = _ipc.SendCommandAsync("audio.get_output_devices");
+    }
+
+    private async void SpeakerComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingSpeaker || SpeakerComboBox.SelectedItem is not ComboBoxItem item) return;
+        var selection = item.Tag as string;
+        try
+        {
+            // Leave the native selection callback before sending a command that can refresh items.
+            await Task.Yield();
+            if (!_ipc.IsConnected)
+            {
+                SpeakerStatusText.Text = "Core non connecté : sortie inchangée.";
+                return;
+            }
+            SpeakerComboBox.IsEnabled = false;
+            SpeakerStatusText.Text = "Changement de la sortie audio…";
+            if (!await _ipc.SendCommandAsync("audio.set_output_device", new { device = selection }))
+                SpeakerStatusText.Text = "Impossible de joindre le Core.";
+        }
+        catch (Exception exception) { SpeakerStatusText.Text = exception.Message; }
+        finally { SpeakerComboBox.IsEnabled = true; }
+    }
+
+    private void HandleSpeakerState(JsonElement message)
+    {
+        if (!message.TryGetProperty("payload", out var payload)) return;
+        _syncingSpeaker = true;
+        try
+        {
+            SpeakerComboBox.Items.Clear();
+            var defaultItem = new ComboBoxItem { Content = "Par défaut Windows", Tag = "" };
+            SpeakerComboBox.Items.Add(defaultItem);
+            var selected = payload.TryGetProperty("selected", out var value)
+                && value.ValueKind == JsonValueKind.String ? value.GetString() : "";
+            var active = payload.GetProperty("active_index");
+            var label = "Aucune sortie active";
+            SpeakerComboBox.SelectedItem = defaultItem;
+            foreach (var device in payload.GetProperty("devices").EnumerateArray())
+            {
+                var id = device.GetProperty("id").GetString();
+                var name = device.GetProperty("label").GetString();
+                var item = new ComboBoxItem { Content = name, Tag = id };
+                SpeakerComboBox.Items.Add(item);
+                if (id == selected) SpeakerComboBox.SelectedItem = item;
+                if (active.ValueKind == JsonValueKind.Number && active.GetInt32() == device.GetProperty("index").GetInt32())
+                    label = name ?? label;
+            }
+            if (!string.IsNullOrEmpty(selected)
+                && ReferenceEquals(SpeakerComboBox.SelectedItem, defaultItem))
+            {
+                var missing = new ComboBoxItem { Content = "Sortie mémorisée indisponible", Tag = selected };
+                SpeakerComboBox.Items.Add(missing);
+                SpeakerComboBox.SelectedItem = missing;
+            }
+            SpeakerStatusText.Text = "Sortie active : " + label;
+            if (payload.TryGetProperty("warning", out var warning) && !string.IsNullOrEmpty(warning.GetString()))
+                SpeakerStatusText.Text += " · " + warning.GetString();
+        }
+        finally { _syncingSpeaker = false; }
+    }
+
+    private async void MicrophoneComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingMicrophone || MicrophoneComboBox.SelectedItem is not ComboBoxItem item)
+            return;
+        if (!_ipc.IsConnected)
+        {
+            MicrophoneStatusText.Text = "Core non connecté : microphone inchangé.";
+            return;
+        }
+        MicrophoneComboBox.IsEnabled = false;
+        try
+        {
+            if (!await _ipc.SendCommandAsync("audio.set_input_device", new { device = item.Tag as string }))
+                MicrophoneStatusText.Text = "Impossible de joindre le Core.";
+            else MicrophoneStatusText.Text = "Changement du microphone…";
+        }
+        catch (Exception exception) { MicrophoneStatusText.Text = exception.Message; }
+        finally { MicrophoneComboBox.IsEnabled = true; }
+    }
+
+    private void HandleMicrophoneState(JsonElement message)
+    {
+        if (!message.TryGetProperty("payload", out var payload)) return;
+        _syncingMicrophone = true;
+        try
+        {
+            MicrophoneComboBox.Items.Clear();
+            var defaultItem = new ComboBoxItem { Content = "Par défaut Windows", Tag = "" };
+            MicrophoneComboBox.Items.Add(defaultItem);
+            var selected = payload.TryGetProperty("selected", out var selectedValue)
+                && selectedValue.ValueKind == JsonValueKind.String ? selectedValue.GetString() : "";
+            MicrophoneComboBox.SelectedItem = defaultItem;
+            var active = payload.GetProperty("active_index");
+            var activeLabel = "Aucun microphone actif";
+            if (payload.TryGetProperty("devices", out var devices))
+                foreach (var device in devices.EnumerateArray())
+                {
+                    var id = device.GetProperty("id").GetString();
+                    var label = device.GetProperty("label").GetString();
+                    var item = new ComboBoxItem { Content = label, Tag = id };
+                    MicrophoneComboBox.Items.Add(item);
+                    if (id == selected) MicrophoneComboBox.SelectedItem = item;
+                    if (active.ValueKind == JsonValueKind.Number && active.GetInt32() == device.GetProperty("index").GetInt32())
+                        activeLabel = label ?? activeLabel;
+                }
+            if (!string.IsNullOrEmpty(selected)
+                && ReferenceEquals(MicrophoneComboBox.SelectedItem, defaultItem))
+            {
+                var missing = new ComboBoxItem { Content = "Microphone mémorisé indisponible", Tag = selected };
+                MicrophoneComboBox.Items.Add(missing);
+                MicrophoneComboBox.SelectedItem = missing;
+            }
+            MicrophoneStatusText.Text = "Micro actif : " + activeLabel;
+            if (payload.TryGetProperty("warning", out var warning) && !string.IsNullOrEmpty(warning.GetString()))
+                MicrophoneStatusText.Text += " · " + warning.GetString();
+        }
+        finally { _syncingMicrophone = false; }
     }
 
     private async Task SetListeningModeAsync(
@@ -4564,6 +4694,7 @@ public sealed partial class DesktopWindow : Window
 
     private void UpdateUpdateSettingsPresentation()
     {
+        if (_updateOperationInProgress) return;
         _updateConfiguration =
             _config.LoadUpdateConfiguration();
 
@@ -4571,27 +4702,23 @@ public sealed partial class DesktopWindow : Window
             _updateConfiguration.Version;
 
         _syncingUpdateChannel = true;
-        UpdateChannelComboBox.Items.Clear();
-
-        if (_updateConfiguration.Channel == "dev")
+        try
         {
-            UpdateChannelComboBox.Items.Add(
-                new ComboBoxItem { Content = "DEV", Tag = "dev" });
-            UpdateChannelComboBox.SelectedIndex = 0;
-            UpdateChannelComboBox.IsEnabled = false;
+            // Build once: clearing native ComboBox items inside SelectionChanged can crash WinUI.
+            if (UpdateChannelComboBox.Items.Count == 0)
+            {
+                if (_updateConfiguration.Channel == "dev")
+                    UpdateChannelComboBox.Items.Add(new ComboBoxItem { Content = "DEV", Tag = "dev" });
+                else
+                {
+                    UpdateChannelComboBox.Items.Add(new ComboBoxItem { Content = "Experimental", Tag = "rc" });
+                    UpdateChannelComboBox.Items.Add(new ComboBoxItem { Content = "Release", Tag = "release" });
+                }
+            }
+            UpdateChannelComboBox.SelectedIndex = _updateConfiguration.Channel == "release" ? 1 : 0;
+            UpdateChannelComboBox.IsEnabled = !_changingUpdateChannel && _updateConfiguration.Channel != "dev";
         }
-        else
-        {
-            UpdateChannelComboBox.Items.Add(
-                new ComboBoxItem { Content = "Experimental", Tag = "rc" });
-            UpdateChannelComboBox.Items.Add(
-                new ComboBoxItem { Content = "Release", Tag = "release" });
-            UpdateChannelComboBox.SelectedIndex =
-                _updateConfiguration.Channel == "rc" ? 0 : 1;
-            UpdateChannelComboBox.IsEnabled = true;
-        }
-
-        _syncingUpdateChannel = false;
+        finally { _syncingUpdateChannel = false; }
 
         UpdateSourceText.Text =
             string.IsNullOrWhiteSpace(
@@ -4648,22 +4775,45 @@ public sealed partial class DesktopWindow : Window
         object sender,
         SelectionChangedEventArgs e)
     {
-        if (_syncingUpdateChannel
+        if (_syncingUpdateChannel || _changingUpdateChannel || _updateOperationInProgress
             || UpdateChannelComboBox.SelectedItem is not ComboBoxItem item
             || item.Tag is not string channel)
         {
             return;
         }
 
-        _updateConfiguration = _config.SaveUpdateChannel(channel);
-        UpdateSourceText.Text = _updateConfiguration.ManifestUrl;
-        await CheckForUpdatesAsync();
+        if (channel == _updateConfiguration.Channel) return;
+        _changingUpdateChannel = true;
+        try
+        {
+            await Task.Yield();
+            UpdateChannelComboBox.IsEnabled = false;
+            _updateConfiguration = _config.SaveUpdateChannel(channel);
+            UpdateUpdateSettingsPresentation();
+            UpdateSourceText.Text = _updateConfiguration.ManifestUrl;
+            await CheckForUpdatesAsync();
+        }
+        catch (Exception exception)
+        {
+            UiLog.Error("Update channel change failed.", exception);
+            _syncingUpdateChannel = true;
+            try { UpdateChannelComboBox.SelectedIndex = _updateConfiguration.Channel == "release" ? 1 : 0; }
+            finally { _syncingUpdateChannel = false; }
+            UpdateStatusText.Text = "Impossible de changer de canal : " + exception.Message;
+        }
+        finally
+        {
+            _changingUpdateChannel = false;
+            UpdateChannelComboBox.IsEnabled = !_updateOperationInProgress && _updateConfiguration.Channel != "dev";
+        }
     }
 
     private async Task CheckForUpdatesAsync()
     {
+        if (_updateOperationInProgress || _verifiedDownloadedUpdate is not null) return;
         if (_updateCheckInProgress)
         {
+            _updateCheckAgain = true;
             return;
         }
 
@@ -4731,6 +4881,12 @@ public sealed partial class DesktopWindow : Window
                     _updateConfiguration.Version,
                     options);
 
+            if (_config.LoadUpdateConfiguration().Channel != options.Channel)
+            {
+                _updateCheckAgain = true;
+                return;
+            }
+
             UpdateStatusText.Text =
                 result.Message;
 
@@ -4758,8 +4914,8 @@ public sealed partial class DesktopWindow : Window
             }
 
             if (
-                result.Status
-                    == AtlasUpdateStatus.UpdateAvailable
+                (result.Status == AtlasUpdateStatus.UpdateAvailable
+                    || result.Status == AtlasUpdateStatus.ReinstallAvailable)
                 && result.Manifest is not null
             )
             {
@@ -4781,6 +4937,10 @@ public sealed partial class DesktopWindow : Window
 
                 DownloadUpdateButton.IsEnabled =
                     downloadConfigured;
+                DownloadUpdateButton.Content = result.Status == AtlasUpdateStatus.ReinstallAvailable
+                    ? "Télécharger pour réinstaller la Release" : "Télécharger la mise à jour";
+                if (downloadConfigured && result.Status == AtlasUpdateStatus.UpdateAvailable)
+                    _ = NotifyUpdateAvailableAsync(result.Manifest, options.Channel);
 
                 if (!downloadConfigured)
                 {
@@ -4825,13 +4985,49 @@ public sealed partial class DesktopWindow : Window
                 Visibility.Collapsed;
 
             _updateCheckInProgress = false;
+            if (_updateCheckAgain)
+            {
+                _updateCheckAgain = false;
+                _ = CheckForUpdatesAsync();
+            }
         }
+    }
+
+    private async Task NotifyUpdateAvailableAsync(AtlasUpdateManifest manifest, string channel)
+    {
+        var key = channel + ":" + manifest.Version;
+        if (_updateNoticeOpen || _notifiedUpdates.Contains(key) || Root.XamlRoot is null
+            || (SettingsPanel.Visibility == Visibility.Visible && SettingsUpdatesSection.Visibility == Visibility.Visible))
+            return;
+        _updateNoticeOpen = true;
+        try
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Mise à jour Atlas disponible",
+                Content = $"Atlas {manifest.Version} est disponible sur le canal {channel}. Voulez-vous ouvrir les mises à jour ?",
+                PrimaryButtonText = "Voir la mise à jour", CloseButtonText = "Plus tard",
+                DefaultButton = ContentDialogButton.Close, XamlRoot = Root.XamlRoot,
+            };
+            ApplyAtlasDialogStyle(dialog);
+            var result = await dialog.ShowAsync();
+            _notifiedUpdates.Add(key);
+            if (result == ContentDialogResult.Primary)
+            {
+                Settings_Click(this, new RoutedEventArgs());
+                SelectSettingsSection("updates");
+                BringFloatingWindowToFront(SettingsPanel);
+            }
+        }
+        catch (Exception exception) { UiLog.Error("Update notification deferred.", exception); }
+        finally { _updateNoticeOpen = false; }
     }
 
     private async void DownloadUpdate_Click(
         object sender,
         RoutedEventArgs e)
     {
+        if (_updateOperationInProgress) return;
         var manifest =
             _availableUpdateManifest;
 
@@ -4843,8 +5039,9 @@ public sealed partial class DesktopWindow : Window
             return;
         }
 
-        DownloadUpdateButton.IsEnabled =
-            false;
+        _updateOperationInProgress = true;
+        UpdateChannelComboBox.IsEnabled = false;
+        DownloadUpdateButton.IsEnabled = false;
 
         UpdateDownloadProgress.Value =
             0;
@@ -4941,6 +5138,8 @@ public sealed partial class DesktopWindow : Window
         }
         finally
         {
+            _updateOperationInProgress = false;
+            UpdateChannelComboBox.IsEnabled = _updateConfiguration.Channel != "dev";
             DownloadUpdateButton.IsEnabled =
                 _availableUpdateManifest is not null
                 && !string.IsNullOrWhiteSpace(
@@ -4954,6 +5153,7 @@ public sealed partial class DesktopWindow : Window
         object sender,
         RoutedEventArgs e)
     {
+        if (_updateOperationInProgress) return;
         var manifest = _availableUpdateManifest;
         var downloaded = _verifiedDownloadedUpdate;
 
@@ -4964,6 +5164,8 @@ public sealed partial class DesktopWindow : Window
             return;
         }
 
+        _updateOperationInProgress = true;
+        UpdateChannelComboBox.IsEnabled = false;
         InstallUpdateButton.IsEnabled = false;
         DownloadUpdateButton.IsEnabled = false;
 
@@ -5112,6 +5314,8 @@ public sealed partial class DesktopWindow : Window
         }
         finally
         {
+            _updateOperationInProgress = false;
+            UpdateChannelComboBox.IsEnabled = _updateConfiguration.Channel != "dev";
             DownloadUpdateButton.IsEnabled =
                 _availableUpdateManifest is not null
                 && !string.IsNullOrWhiteSpace(_availableUpdateManifest.DownloadUrl)
@@ -8514,6 +8718,31 @@ public sealed partial class DesktopWindow : Window
                 HandleListeningModeState(
                     message);
 
+                break;
+
+            case "audio.input_devices":
+                HandleMicrophoneState(message);
+                break;
+            case "audio.output_devices":
+                HandleSpeakerState(message);
+                break;
+            case "audio.output_device_error":
+                if (message.TryGetProperty("payload", out var outputError))
+                    SpeakerStatusText.Text = outputError.GetProperty("reason").GetString();
+                break;
+            case "audio.device_inventory_error":
+                if (message.TryGetProperty("payload", out var inventoryError))
+                {
+                    var reason = inventoryError.TryGetProperty("reason", out var reasonValue)
+                        ? reasonValue.GetString()
+                        : "Inventaire audio indisponible.";
+                    MicrophoneStatusText.Text = reason;
+                    SpeakerStatusText.Text = reason;
+                }
+                break;
+            case "audio.input_device_error":
+                if (message.TryGetProperty("payload", out var microphoneError))
+                    MicrophoneStatusText.Text = microphoneError.GetProperty("reason").GetString();
                 break;
 
             case "audio.listening_mode_error":
@@ -14234,7 +14463,7 @@ public sealed partial class DesktopWindow : Window
             var storageRoot =
                 string.IsNullOrWhiteSpace(
                     config.StorageRoot)
-                    ? @"C:\AtlasData"
+                    ? @"C:\Atlas"
                     : config.StorageRoot;
 
             StorageWidgetRootText.Text =

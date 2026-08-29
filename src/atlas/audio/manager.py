@@ -74,9 +74,24 @@ class AudioManager:
         config,
     ) -> None:
 
-        default_input = (
-            self.devices.get_default_input()
-        )
+        self.output_selection = config.get("audio.output_device", None)
+        self.output_warning = ""
+        try:
+            selected_output = self.devices.resolve_output(self.output_selection)
+        except ValueError:
+            self.output_warning = "Sortie mémorisée absente : utilisation du défaut Windows."
+            self.logger.warning(self.output_warning)
+            selected_output = self.devices.resolve_output()
+        self.output.device_index = selected_output.index if selected_output else None
+
+        self.input_selection = config.get("audio.input_device", None)
+        self.input_warning = ""
+        try:
+            default_input = self.devices.resolve_input(self.input_selection)
+        except ValueError:
+            self.input_warning = "Microphone choisi absent : utilisation du défaut Windows."
+            self.logger.warning(self.input_warning)
+            default_input = self.devices.get_default_input()
 
         if default_input is None:
 
@@ -287,6 +302,4 @@ class AudioManager:
             self.logger.warning(
                 "AudioQueue pleine : bloc audio ignoré."
             )
-
-
 

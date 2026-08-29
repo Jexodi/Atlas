@@ -8,7 +8,7 @@ namespace Atlas.UI.Services;
 public sealed class AtlasConfigService
 {
     private const string DefaultStorageRoot =
-        @"C:\AtlasData";
+        @"C:\Atlas";
 
     public AtlasConfig Load()
     {

@@ -343,6 +343,35 @@ class AudioOutput:
             * 1000
         )
 
+    def switch_device(self, device_index):
+        """Keep the task/buffer alive and restore the previous output on failure."""
+        if not self._running:
+            raise RuntimeError("Sortie audio inactive : redémarrez le Core.")
+        previous, speaking = self.device_index, self.speaking
+        self.stop()
+        try:
+            self._open_device(device_index)
+        except Exception as error:
+            try:
+                self._open_device(previous)
+                self.speaking = speaking
+            except Exception:
+                raise RuntimeError("Sortie indisponible et restauration impossible. Redémarrez le Core.") from error
+            raise RuntimeError("Impossible d’ouvrir cette sortie ; ancienne sortie restaurée.") from error
+        self.speaking = speaking
+
+    def _open_device(self, index):
+        stream = sd.RawOutputStream(device=index, samplerate=self.sample_rate,
+            channels=self.channels, dtype="int16", callback=self._audio_callback)
+        try:
+            stream.start()
+        except Exception:
+            stream.close()
+            raise
+        self._stream = stream
+        self.device_index = index
+        self._running = True
+
     def stop(self) -> None:
 
         if self._stream is not None:

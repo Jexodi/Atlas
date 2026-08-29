@@ -387,7 +387,7 @@ class AtlasUiBridge:
             {
                 "type": "hello",
                 "source": "core",
-                "version": "3.3.5",
+                "version": "3.3.5-rc.4",
                 "state": self._state_snapshot(),
             }
         )

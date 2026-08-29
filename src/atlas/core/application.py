@@ -123,7 +123,7 @@ class AtlasApplication:
 
         storage_root = self.config.get(
             "storage.root",
-            r"C:\AtlasData",
+            r"C:\Atlas",
         )
 
         self.storage = AtlasStorage(
@@ -480,6 +480,130 @@ class AtlasApplication:
             )
             or {}
         )
+
+        if name == "audio.get_devices":
+            try:
+                devices = self.audio.devices
+                choices = devices.device_choices()
+                current_input = self.audio.microphone
+                self.ui_bridge.send_event("audio.input_devices", {
+                    "devices": choices["inputs"],
+                    "selected": self.config.get("audio.input_device", None),
+                    "active_index": current_input.device_index if current_input else None,
+                    "warning": getattr(self.audio, "input_warning", ""),
+                })
+                self.ui_bridge.send_event("audio.output_devices", {
+                    "devices": choices["outputs"],
+                    "selected": self.config.get("audio.output_device", None),
+                    "active_index": (
+                        self.audio.output.device_index
+                        if self.audio.output._running
+                        else None
+                    ),
+                    "warning": getattr(self.audio, "output_warning", ""),
+                })
+            except Exception as exc:
+                self.logger.exception("Audio device inventory failed")
+                self.ui_bridge.send_event(
+                    "audio.device_inventory_error",
+                    {"reason": str(exc)},
+                )
+            return
+
+        if name in ("audio.get_output_devices", "audio.set_output_device"):
+            error = ""
+            try:
+                if name == "audio.set_output_device":
+                    self.config.load()
+                    selection = command_payload.get("device") or None
+                    device = self.audio.devices.resolve_output(selection)
+                    if device is None:
+                        raise RuntimeError("Aucune sortie audio disponible.")
+                    previous = self.audio.output.device_index
+                    self.audio.output.switch_device(device.index)
+                    old_value = self.config.get("audio.output_device", None)
+                    try:
+                        self.config.set("audio.output_device", selection)
+                        self.config.save()
+                    except Exception:
+                        self.config.set("audio.output_device", old_value)
+                        self.audio.output.switch_device(previous)
+                        raise
+                    self.audio.output_selection = selection
+                    self.audio.output_warning = ""
+            except Exception as exc:
+                self.logger.exception("Audio output selection failed")
+                error = str(exc)
+            try:
+                self.logger.debug("Début de l'inventaire des sorties audio.")
+                output_choices = self.audio.devices.output_choices()
+                sent = self.ui_bridge.send_event("audio.output_devices", {
+                    "devices": output_choices,
+                    "selected": self.config.get("audio.output_device", None),
+                    "active_index": (
+                        self.audio.output.device_index
+                        if getattr(self.audio.output, "_running", False)
+                        else None
+                    ),
+                    "warning": error or getattr(self.audio, "output_warning", ""),
+                })
+                self.logger.debug(
+                    "Inventaire des sorties audio terminé : %d périphérique(s), envoyé=%s.",
+                    len(output_choices),
+                    sent,
+                )
+            except Exception as exc:
+                self.logger.exception("Impossible d'envoyer l'inventaire des sorties audio")
+                error = error or str(exc)
+            if error:
+                self.ui_bridge.send_event("audio.output_device_error", {"reason": error})
+            return
+
+        if name in ("audio.get_input_devices", "audio.set_input_device"):
+            try:
+                if name == "audio.set_input_device":
+                    # The UI may have changed the update channel since Core started.
+                    self.config.load()
+                    selection = command_payload.get("device") or None
+                    device = self.audio.devices.resolve_input(selection)
+                    if device is None or self.audio.microphone is None:
+                        raise RuntimeError("Aucun microphone actif. Branchez un micro et redémarrez le Core.")
+                    previous = self.audio.microphone.device_index
+                    self.audio.microphone.switch_device(device.index)
+                    old_value = self.config.get("audio.input_device", None)
+                    try:
+                        self.config.set("audio.input_device", selection)
+                        self.config.save()
+                    except Exception:
+                        self.config.set("audio.input_device", old_value)
+                        self.audio.microphone.switch_device(previous)
+                        raise
+                    self.audio.input_selection = selection
+                    self.audio.input_warning = ""
+                    if self.audio.pipeline is not None:
+                        self.audio.pipeline._reset_capture_state()
+                current = self.audio.microphone
+                self.ui_bridge.send_event("audio.input_devices", {
+                    "devices": self.audio.devices.input_choices(),
+                    "selected": self.config.get("audio.input_device", None),
+                    "active_index": current.device_index if current else None,
+                    "warning": getattr(self.audio, "input_warning", ""),
+                })
+            except Exception as exc:
+                self.logger.exception("Microphone selection failed")
+                if name == "audio.set_input_device":
+                    try:
+                        current = self.audio.microphone
+                        self.ui_bridge.send_event("audio.input_devices", {
+                            "devices": self.audio.devices.input_choices(),
+                            "selected": self.config.get("audio.input_device", None),
+                            "active_index": current.device_index if current else None,
+                            "warning": str(exc),
+                        })
+                    except Exception:
+                        self.logger.exception("Cannot refresh microphone choices")
+                self.ui_bridge.send_event("audio.input_device_error", {"reason": str(exc)})
+            return
 
         if name == "audio.get_listening_mode":
 
