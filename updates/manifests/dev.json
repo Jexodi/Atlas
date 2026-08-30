@@ -1,8 +1,0 @@
-{
-    "version":  "3.3.6-dev",
-    "channel":  "dev",
-    "url":  "https://github.com/Jexodi/SIDERON/releases/download/v3.3.6-dev/SIDERON-3.3.6-dev.exe",
-    "sha256":  "17dc156cc70c7066b73f679de270b7be8d16c506c76e0bd4da582041141e55b1",
-    "notes":  "Sideron 3.3.6-dev — Version de développement du canal DEV.",
-    "published_utc":  "2026-08-29T21:10:28Z"
-}
