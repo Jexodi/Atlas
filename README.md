@@ -4,7 +4,7 @@
 
 SIDERON est un assistant personnel natif pour Windows, orienté interaction vocale, automatisation locale et pilotage sécurisé du poste. L’interface de bureau est développée en C# / WinUI 3 et le Core intelligent en Python.
 
-> État actuel : `3.3.5-rc.3` — Release Candidate du canal expérimental.
+> État actuel : `3.3.6` — Release Candidate du canal expérimental.
 
 ## Fonctionnalités
 
