@@ -1,7 +1,7 @@
 {
     "sideron":  {
                     "name":  "SIDERON",
-                    "version":  "3.3.6",
+                    "version":  "3.3.6-rc.1",
                     "language":  "fr-FR"
                 },
     "system":  {
@@ -67,8 +67,8 @@
                },
     "updates":  {
                     "enabled":  true,
-                    "channel":  "release",
+                    "channel":  "rc",
                     "check_on_startup":  true,
-                    "manifest_url":  "https://raw.githubusercontent.com/Jexodi/SIDERON/main/updates/manifests/release.json"
+                    "manifest_url":  "https://raw.githubusercontent.com/Jexodi/SIDERON/main/updates/manifests/rc.json"
                 }
 }

@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Globalization;
 using System.Text;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.System;
 using Windows.UI.Core;
 using WinRT.Interop;
@@ -79,10 +80,8 @@ public sealed partial class DesktopWindow : Window
     private readonly SideronConfigService _config;
     private readonly DisplayService _displayService;
     private readonly DispatcherTimer _clockTimer;
-    private readonly DispatcherTimer _taskbarGuardTimer;
     private readonly DispatcherTimer _storageWidgetTimer;
     private readonly DispatcherTimer _updateCheckTimer;
-    private readonly TaskbarVisibilityService _taskbarVisibility;
     private readonly SideronIpcServerService _ipc;
     private readonly CoreProcessService _coreProcess;
     private readonly StartupRegistrationService _startupRegistration;
@@ -105,6 +104,15 @@ public sealed partial class DesktopWindow : Window
     private readonly HashSet<string> _notifiedUpdates = new();
     private bool _voiceSessionActive;
     private bool _applyingWidgetPreferences;
+    private FrameworkElement? _draggedWidgetPreview;
+    private string? _draggedWidgetPreviewId;
+    private Windows.Foundation.Point _widgetPreviewDragStartPointer;
+    private bool _widgetPreviewPointerDragActive;
+    private string _widgetCoreSize = "small";
+    private string _widgetSystemSize = "small";
+    private string _widgetVoiceSize = "small";
+    private string _widgetStorageSize = "small";
+    private string _widgetNetworkSize = "small";
     private FrameworkElement? _draggedDesktopWidget;
     private Windows.Foundation.Point _desktopWidgetDragStartPointer;
     private double _desktopWidgetDragStartLeft;
@@ -117,10 +125,10 @@ public sealed partial class DesktopWindow : Window
     private const double DockWorkspaceGapDip = 10.0;
 
     private const string SideronVersion =
-        "3.3.6";
+        "3.3.6-rc.1";
 
     private const string SideronReleaseChannel =
-        "Release";
+        "Experimental";
 
     private bool _coreConnected;
 
@@ -162,7 +170,7 @@ public sealed partial class DesktopWindow : Window
     private bool _syncingSettingsControls;
 
     private bool _settingsEditingReady;
-    private bool _settingsHasUnsavedChanges;
+    private bool _changingPermissionMode;
 
     private int _floatingWindowZIndex =
         20;
@@ -227,6 +235,13 @@ public sealed partial class DesktopWindow : Window
     {
         InitializeComponent();
 
+        // Dès qu'une interaction Windows réactive la fenêtre (clic sur le
+        // bureau SIDERON ou sur son bouton dans la barre des tâches), on la
+        // replace explicitement au premier plan. Cela conserve le mode plein
+        // écran tout en donnant au bouton de barre des tâches le comportement
+        // attendu d'une application classique comme Chrome ou Discord.
+        Activated += DesktopWindow_Activated;
+
         ApplySideronWindowIcon();
 
         _config =
@@ -234,9 +249,6 @@ public sealed partial class DesktopWindow : Window
 
         _displayService =
             new DisplayService();
-
-        _taskbarVisibility =
-            new TaskbarVisibilityService();
 
         _ipc =
             new SideronIpcServerService();
@@ -255,20 +267,6 @@ public sealed partial class DesktopWindow : Window
 
         _ipc.MessageReceived +=
             OnIpcMessageReceived;
-
-        _taskbarGuardTimer =
-            new DispatcherTimer
-            {
-                Interval =
-                    TimeSpan.FromSeconds(
-                        2),
-            };
-
-        _taskbarGuardTimer.Tick +=
-            (_, _) =>
-            {
-                _taskbarVisibility.Refresh();
-            };
 
         _storageWidgetTimer =
             new DispatcherTimer
@@ -313,27 +311,54 @@ public sealed partial class DesktopWindow : Window
         UpdateStorageWidget();
 
         _clockTimer.Start();
-        _taskbarGuardTimer.Start();
         _storageWidgetTimer.Start();
         _updateCheckTimer.Start();
 
         Closed +=
             (_, _) =>
             {
+                // Persist the latest widget state once more during a normal
+                // shutdown. Size changes are already saved immediately, but
+                // this final write protects against a later window-layout save
+                // or an exit path occurring just after a resize.
+                SaveWidgetPreferences();
+
                 _clockTimer.Stop();
-                _taskbarGuardTimer.Stop();
                 _storageWidgetTimer.Stop();
                 _updateCheckTimer.Stop();
 
-                _taskbarVisibility.Restore();
 
                 _ipc.Dispose();
 
                 _coreProcess.Dispose();
 
                 UiLog.Info(
-                    "DesktopWindow closed; Windows taskbar restored.");
+                    "DesktopWindow closed.");
             };
+    }
+
+    private void DesktopWindow_Activated(
+        object sender,
+        Microsoft.UI.Xaml.WindowActivatedEventArgs args)
+    {
+        if (args.WindowActivationState ==
+            WindowActivationState.Deactivated)
+        {
+            // SIDERON ne doit pas rester au-dessus des autres applications
+            // lorsqu'il perd le focus. On retire donc uniquement son statut
+            // topmost, sans le masquer ni modifier son plein écran.
+            DesktopIntegrationService.SetForegroundPriority(
+                this,
+                false);
+
+            return;
+        }
+
+        // Lorsqu'il est activé (clic dans SIDERON ou sur son bouton de barre
+        // des tâches), on le place au-dessus de la barre des tâches Explorer
+        // tout en conservant son bouton dans celle-ci.
+        DesktopIntegrationService.BringToForeground(
+            this);
     }
 
     public void InitializeDesktop()
@@ -373,6 +398,8 @@ public sealed partial class DesktopWindow : Window
                     UpdateDockHeightFromDisplay(
                         _atlasDisplay);
                 }
+
+                UpdateWidgetLibraryGridLayout();
 
                 if (
                     _widgetPresetNeedsInitialLayout
@@ -503,10 +530,11 @@ public sealed partial class DesktopWindow : Window
 
     private void ConfigureWindowBounds()
     {
-        // Restore Windows first so rcWork contains the real taskbar
-        // reservation before Sideron hides the taskbar on this monitor.
-        _taskbarVisibility.Restore();
-
+        // Sideron reste une vraie fenêtre plein écran sans bordure.
+        // On utilise les limites complètes du moniteur afin que l'interface
+        // occupe toute la surface de l'écran. Explorer conserve sa barre des
+        // tâches et son bouton SIDERON ; lorsque SIDERON est actif, sa fenêtre
+        // passe temporairement au-dessus de la barre des tâches.
         var atlasConfig =
             _config.Load();
 
@@ -556,11 +584,8 @@ public sealed partial class DesktopWindow : Window
         UpdateDockHeightFromDisplay(
             display);
 
-        _taskbarVisibility.HideOnMonitor(
-            display.Bounds);
-
         UiLog.Info(
-            $"Windows taskbar hidden on Sideron monitor {display.DeviceName}. Sideron dock uses its independent floating layout.");
+            $"Sideron Desktop fitted to full monitor bounds on {display.DeviceName}; Windows taskbar remains managed by Explorer and Sideron stays available in the taskbar/switchers.");
     }
 
     private void UpdateDockHeightFromDisplay(
@@ -759,7 +784,6 @@ public sealed partial class DesktopWindow : Window
         _settingsEditingReady =
             true;
 
-        ClearSettingsDirtyState();
     }
 
     private void PopulateDisplaySettings(
@@ -3175,53 +3199,11 @@ public sealed partial class DesktopWindow : Window
             "Settings panel opened.");
     }
 
-    private async void CloseSettingsPanel_Click(
+    private void CloseSettingsPanel_Click(
         object sender,
         RoutedEventArgs e)
     {
-        if (
-            _settingsHasUnsavedChanges
-            && !await ConfirmDiscardSettingsChangesAsync()
-        )
-        {
-            return;
-        }
-
         CloseSettingsPanelInternal();
-    }
-
-    private async Task<bool> ConfirmDiscardSettingsChangesAsync()
-    {
-        var dialog =
-            new ContentDialog
-            {
-                Title =
-                    "Abandonner les modifications ?",
-
-                Content =
-                    "Les changements effectués dans les Paramètres Sideron n’ont pas été enregistrés.",
-
-                PrimaryButtonText =
-                    "Abandonner",
-
-                CloseButtonText =
-                    "Continuer la modification",
-
-                DefaultButton =
-                    ContentDialogButton.Close,
-
-                XamlRoot =
-                    Root.XamlRoot,
-            };
-
-        ApplySideronDialogStyle(
-            dialog);
-
-        var result =
-            await dialog.ShowAsync();
-
-        return result
-            == ContentDialogResult.Primary;
     }
 
     private void CloseSettingsPanelInternal()
@@ -3231,8 +3213,6 @@ public sealed partial class DesktopWindow : Window
 
         _settingsEditingReady =
             false;
-
-        ClearSettingsDirtyState();
 
         ForgetFloatingWindowState(
             SettingsPanel);
@@ -3823,7 +3803,7 @@ public sealed partial class DesktopWindow : Window
         DisplaySettingsPendingText.Text =
             isApplied
                 ? "Aucun changement en attente."
-                : "Changement en attente · cliquez sur Enregistrer pour l’appliquer.";
+                : "Changement détecté · enregistrement automatique…";
     }
 
     private void RefreshDisplaySettings_Click(
@@ -5329,9 +5309,6 @@ public sealed partial class DesktopWindow : Window
 
     private async Task ShutdownSideronForUpdateAsync()
     {
-        _taskbarGuardTimer.Stop();
-        _taskbarVisibility.Restore();
-
         try
         {
             if (_ipc.IsConnected)
@@ -5713,7 +5690,7 @@ public sealed partial class DesktopWindow : Window
     }
 
 
-    private void MarkSettingsDirty()
+    private void SaveGeneralSettingsAutomatically()
     {
         if (
             !_settingsEditingReady
@@ -5723,23 +5700,87 @@ public sealed partial class DesktopWindow : Window
             return;
         }
 
-        _settingsHasUnsavedChanges =
-            true;
+        if (
+            SettingsDisplayComboBox.SelectedItem
+                is not ComboBoxItem displayItem
+            || displayItem.Tag is not string displayId
+        )
+        {
+            return;
+        }
 
-        SettingsSaveButton.IsEnabled =
-            true;
+        var displays =
+            _displayService
+                .EnumerateDisplays();
 
-        SettingsStatusText.Text =
-            "Modifications non enregistrées.";
-    }
+        var screenIndex =
+            displays
+                .ToList()
+                .FindIndex(
+                    display =>
+                        string.Equals(
+                            display.DeviceName,
+                            displayId,
+                            StringComparison.OrdinalIgnoreCase));
 
-    private void ClearSettingsDirtyState()
-    {
-        _settingsHasUnsavedChanges =
-            false;
+        if (screenIndex < 0)
+        {
+            screenIndex = 0;
+        }
 
-        SettingsSaveButton.IsEnabled =
-            false;
+        var oldConfig =
+            _config.Load();
+
+        var newConfig =
+            oldConfig with
+            {
+                ScreenId = displayId,
+                ScreenIndex = screenIndex,
+                StartWithWindows = SettingsStartupToggle.IsOn,
+            };
+
+        try
+        {
+            _config.Save(
+                newConfig);
+
+            _startupRegistration.Apply(
+                newConfig.StartWithWindows);
+
+            UpdateStartupRegistrationPresentation();
+
+            var screenChanged =
+                !string.Equals(
+                    oldConfig.ScreenId,
+                    newConfig.ScreenId,
+                    StringComparison.OrdinalIgnoreCase)
+                || oldConfig.ScreenIndex
+                    != newConfig.ScreenIndex;
+
+            if (screenChanged)
+            {
+                ConfigureWindowBounds();
+            }
+
+            UpdateDisplaySettingsPresentation();
+            UpdateSettingsHomeDashboard();
+
+            SettingsStatusText.Text =
+                "Paramètres enregistrés automatiquement.";
+
+            UiLog.Info(
+                "Sideron settings automatically saved from native UI.");
+        }
+        catch (Exception exception)
+        {
+            UiLog.Error(
+                "Unable to automatically save Sideron settings.",
+                exception);
+
+            SettingsStatusText.Text =
+                "Enregistrement automatique impossible : "
+                + exception.Message;
+        }
     }
 
     private void SettingsDisplayComboBox_SelectionChanged(
@@ -5751,14 +5792,24 @@ public sealed partial class DesktopWindow : Window
             return;
         }
 
-        if (SettingsDisplayComboBoxSecondary.SelectedIndex
-            != SettingsDisplayComboBox.SelectedIndex)
+        _syncingSettingsControls = true;
+
+        try
         {
-            SettingsDisplayComboBoxSecondary.SelectedIndex =
-                SettingsDisplayComboBox.SelectedIndex;
+            if (SettingsDisplayComboBoxSecondary.SelectedIndex
+                != SettingsDisplayComboBox.SelectedIndex)
+            {
+                SettingsDisplayComboBoxSecondary.SelectedIndex =
+                    SettingsDisplayComboBox.SelectedIndex;
+            }
+        }
+        finally
+        {
+            _syncingSettingsControls = false;
         }
 
-        MarkSettingsDirty();
+        UpdateDisplaySettingsPresentation();
+        SaveGeneralSettingsAutomatically();
     }
 
     private void SettingsDisplayComboBoxSecondary_SelectionChanged(
@@ -5770,15 +5821,24 @@ public sealed partial class DesktopWindow : Window
             return;
         }
 
-        if (SettingsDisplayComboBox.SelectedIndex
-            != SettingsDisplayComboBoxSecondary.SelectedIndex)
+        _syncingSettingsControls = true;
+
+        try
         {
-            SettingsDisplayComboBox.SelectedIndex =
-                SettingsDisplayComboBoxSecondary.SelectedIndex;
+            if (SettingsDisplayComboBox.SelectedIndex
+                != SettingsDisplayComboBoxSecondary.SelectedIndex)
+            {
+                SettingsDisplayComboBox.SelectedIndex =
+                    SettingsDisplayComboBoxSecondary.SelectedIndex;
+            }
+        }
+        finally
+        {
+            _syncingSettingsControls = false;
         }
 
         UpdateDisplaySettingsPresentation();
-        MarkSettingsDirty();
+        SaveGeneralSettingsAutomatically();
     }
 
     private void SettingsStorageComboBox_SelectionChanged(
@@ -5790,14 +5850,23 @@ public sealed partial class DesktopWindow : Window
             return;
         }
 
-        if (SettingsStorageComboBoxSecondary.SelectedIndex
-            != SettingsStorageComboBox.SelectedIndex)
+        _syncingSettingsControls = true;
+
+        try
         {
-            SettingsStorageComboBoxSecondary.SelectedIndex =
-                SettingsStorageComboBox.SelectedIndex;
+            if (SettingsStorageComboBoxSecondary.SelectedIndex
+                != SettingsStorageComboBox.SelectedIndex)
+            {
+                SettingsStorageComboBoxSecondary.SelectedIndex =
+                    SettingsStorageComboBox.SelectedIndex;
+            }
+        }
+        finally
+        {
+            _syncingSettingsControls = false;
         }
 
-        MarkSettingsDirty();
+        UpdateStorageSettingsPresentation();
     }
 
     private void SettingsStorageComboBoxSecondary_SelectionChanged(
@@ -5809,15 +5878,23 @@ public sealed partial class DesktopWindow : Window
             return;
         }
 
-        if (SettingsStorageComboBox.SelectedIndex
-            != SettingsStorageComboBoxSecondary.SelectedIndex)
+        _syncingSettingsControls = true;
+
+        try
         {
-            SettingsStorageComboBox.SelectedIndex =
-                SettingsStorageComboBoxSecondary.SelectedIndex;
+            if (SettingsStorageComboBox.SelectedIndex
+                != SettingsStorageComboBoxSecondary.SelectedIndex)
+            {
+                SettingsStorageComboBox.SelectedIndex =
+                    SettingsStorageComboBoxSecondary.SelectedIndex;
+            }
+        }
+        finally
+        {
+            _syncingSettingsControls = false;
         }
 
         UpdateStorageSettingsPresentation();
-        MarkSettingsDirty();
     }
 
     private void UpdateStartupRegistrationPresentation()
@@ -5855,14 +5932,23 @@ public sealed partial class DesktopWindow : Window
             return;
         }
 
-        if (SettingsStartupToggleSecondary.IsOn
-            != SettingsStartupToggle.IsOn)
+        _syncingSettingsControls = true;
+
+        try
         {
-            SettingsStartupToggleSecondary.IsOn =
-                SettingsStartupToggle.IsOn;
+            if (SettingsStartupToggleSecondary.IsOn
+                != SettingsStartupToggle.IsOn)
+            {
+                SettingsStartupToggleSecondary.IsOn =
+                    SettingsStartupToggle.IsOn;
+            }
+        }
+        finally
+        {
+            _syncingSettingsControls = false;
         }
 
-        MarkSettingsDirty();
+        SaveGeneralSettingsAutomatically();
     }
 
     private void SettingsStartupToggleSecondary_Toggled(
@@ -5874,14 +5960,23 @@ public sealed partial class DesktopWindow : Window
             return;
         }
 
-        if (SettingsStartupToggle.IsOn
-            != SettingsStartupToggleSecondary.IsOn)
+        _syncingSettingsControls = true;
+
+        try
         {
-            SettingsStartupToggle.IsOn =
-                SettingsStartupToggleSecondary.IsOn;
+            if (SettingsStartupToggle.IsOn
+                != SettingsStartupToggleSecondary.IsOn)
+            {
+                SettingsStartupToggle.IsOn =
+                    SettingsStartupToggleSecondary.IsOn;
+            }
+        }
+        finally
+        {
+            _syncingSettingsControls = false;
         }
 
-        MarkSettingsDirty();
+        SaveGeneralSettingsAutomatically();
     }
 
     private static Windows.UI.Color ColorFromHex(
@@ -5911,7 +6006,7 @@ public sealed partial class DesktopWindow : Window
             b);
     }
 
-    private void SettingsPermissionModeComboBox_SelectionChanged(
+    private async void SettingsPermissionModeComboBox_SelectionChanged(
         object sender,
         SelectionChangedEventArgs e)
     {
@@ -5922,13 +6017,88 @@ public sealed partial class DesktopWindow : Window
             mode);
 
         if (
-            !string.Equals(
+            !_settingsEditingReady
+            || _syncingSettingsControls
+            || _changingPermissionMode
+            || string.Equals(
                 mode,
                 _currentPermissionMode,
                 StringComparison.OrdinalIgnoreCase)
         )
         {
-            MarkSettingsDirty();
+            return;
+        }
+
+        _changingPermissionMode =
+            true;
+
+        try
+        {
+            if (
+                !await ConfirmElevatedPermissionModeAsync(
+                    mode)
+            )
+            {
+                SelectPermissionMode(
+                    _currentPermissionMode);
+
+                UpdatePermissionModePresentation(
+                    _currentPermissionMode);
+
+                SettingsStatusText.Text =
+                    "Changement de permissions annulé.";
+
+                return;
+            }
+
+            if (!_ipc.IsConnected)
+            {
+                await ShowMessageAsync(
+                    "Core non connecté",
+                    "Le mode de permissions n’a pas été modifié car Sideron Core n’est pas connecté.");
+
+                SelectPermissionMode(
+                    _currentPermissionMode);
+
+                UpdatePermissionModePresentation(
+                    _currentPermissionMode);
+
+                return;
+            }
+
+            var commandSent =
+                await _ipc.SendCommandAsync(
+                    "security.set_permission_mode",
+                    new
+                    {
+                        mode,
+                        confirmed =
+                            mode is "administrator"
+                            or "jarvis",
+                    });
+
+            if (!commandSent)
+            {
+                await ShowMessageAsync(
+                    "Permissions",
+                    "Impossible d’envoyer la modification de permissions au Core.");
+
+                SelectPermissionMode(
+                    _currentPermissionMode);
+
+                UpdatePermissionModePresentation(
+                    _currentPermissionMode);
+
+                return;
+            }
+
+            SettingsStatusText.Text =
+                "Mode de permissions envoyé au Core · enregistrement automatique en cours…";
+        }
+        finally
+        {
+            _changingPermissionMode =
+                false;
         }
     }
 
@@ -6212,183 +6382,6 @@ public sealed partial class DesktopWindow : Window
         return (
             await dialog.ShowAsync()
         ) == ContentDialogResult.Primary;
-    }
-
-    private async void SaveSettings_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        if (
-            SettingsDisplayComboBoxSecondary
-                .SelectedItem
-            is ComboBoxItem secondaryDisplayItem)
-        {
-            SettingsDisplayComboBox.SelectedIndex =
-                SettingsDisplayComboBoxSecondary.SelectedIndex;
-        }
-
-        SettingsStartupToggle.IsOn =
-            SettingsStartupSection.Visibility
-            == Visibility.Visible
-                ? SettingsStartupToggleSecondary.IsOn
-                : SettingsStartupToggle.IsOn;
-
-        if (
-            SettingsDisplayComboBox
-                .SelectedItem
-            is not ComboBoxItem
-                displayItem
-            || displayItem.Tag
-                is not string
-                displayId
-        )
-        {
-            await ShowMessageAsync(
-                "Paramètres",
-                "Sélectionnez un écran Sideron.");
-
-            return;
-        }
-
-        var displays =
-            _displayService
-                .EnumerateDisplays();
-
-        var screenIndex =
-            displays
-                .ToList()
-                .FindIndex(
-                    display =>
-                        string.Equals(
-                            display.DeviceName,
-                            displayId,
-                            StringComparison.OrdinalIgnoreCase));
-
-        if (screenIndex < 0)
-        {
-            screenIndex = 0;
-        }
-
-        var oldConfig =
-            _config.Load();
-
-        var newConfig =
-            new SideronConfig(
-                oldConfig.StorageRoot,
-                displayId,
-                screenIndex,
-                SettingsStartupToggle.IsOn);
-
-        try
-        {
-            _config.Save(
-                newConfig);
-
-            _startupRegistration.Apply(
-                newConfig.StartWithWindows);
-
-            UpdateStartupRegistrationPresentation();
-
-            var screenChanged =
-                !string.Equals(
-                    oldConfig.ScreenId,
-                    newConfig.ScreenId,
-                    StringComparison.OrdinalIgnoreCase)
-                || oldConfig.ScreenIndex
-                    != newConfig.ScreenIndex;
-
-            if (screenChanged)
-            {
-                ConfigureWindowBounds();
-            }
-
-            var selectedPermissionMode =
-                GetSelectedPermissionMode();
-
-            var permissionModeChanged =
-                !string.Equals(
-                    selectedPermissionMode,
-                    _currentPermissionMode,
-                    StringComparison.OrdinalIgnoreCase);
-
-            if (permissionModeChanged)
-            {
-                if (
-                    !await ConfirmElevatedPermissionModeAsync(
-                        selectedPermissionMode)
-                )
-                {
-                    SelectPermissionMode(
-                        _currentPermissionMode);
-
-                    UpdatePermissionModePresentation(
-                        _currentPermissionMode);
-
-                    SettingsStatusText.Text =
-                        "Paramètres enregistrés · changement de permissions annulé.";
-
-                    return;
-                }
-
-                if (!_ipc.IsConnected)
-                {
-                    await ShowMessageAsync(
-                        "Core non connecté",
-                        "Le mode de permissions n’a pas été modifié car Sideron Core n’est pas connecté.");
-
-                    SelectPermissionMode(
-                        _currentPermissionMode);
-
-                    return;
-                }
-
-                var permissionCommandSent =
-                    await _ipc.SendCommandAsync(
-                        "security.set_permission_mode",
-                        new
-                        {
-                            mode =
-                                selectedPermissionMode,
-
-                            confirmed =
-                                selectedPermissionMode
-                                is "administrator"
-                                or "jarvis",
-                        });
-
-                if (!permissionCommandSent)
-                {
-                    await ShowMessageAsync(
-                        "Permissions",
-                        "Impossible d’envoyer la modification de permissions au Core.");
-
-                    SelectPermissionMode(
-                        _currentPermissionMode);
-
-                    return;
-                }
-            }
-
-            SettingsStatusText.Text =
-                permissionModeChanged
-                        ? "Paramètres enregistrés · application du mode de permissions…"
-                        : "Paramètres enregistrés.";
-
-            ClearSettingsDirtyState();
-
-            UiLog.Info(
-                "Sideron settings saved from native UI.");
-        }
-        catch (Exception exception)
-        {
-            UiLog.Error(
-                "Unable to save Sideron settings.",
-                exception);
-
-            await ShowMessageAsync(
-                "Enregistrement impossible",
-                exception.Message);
-        }
     }
 
     private void NavigateToDirectory(
@@ -8836,8 +8829,7 @@ public sealed partial class DesktopWindow : Window
                 StringComparison.OrdinalIgnoreCase)
         )
         {
-            ClearSettingsDirtyState();
-        }
+            }
 
         SettingsStatusText.Text =
             $"Mode de permissions actif : {GetPermissionModeDisplayName(mode)}";
@@ -9688,6 +9680,9 @@ public sealed partial class DesktopWindow : Window
             CreateBrush(
                 indicatorColor);
 
+        UpdateCoreDockButtonVisualState(
+            connected);
+
         CoreDockStatusText.Text =
             statusOverride
             ?? (
@@ -9704,6 +9699,42 @@ public sealed partial class DesktopWindow : Window
 
         CoreDockStopButton.IsEnabled =
             connected;
+    }
+
+    private void UpdateCoreDockButtonVisualState(
+        bool connected)
+    {
+        CoreDockLogoColor.Visibility =
+            connected
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        CoreDockLogoMono.Visibility =
+            connected
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+
+        CoreDockFlyoutLogoColor.Visibility =
+            connected
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        CoreDockFlyoutLogoMono.Visibility =
+            connected
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+
+        SideronCoreButton.Background =
+            CreateBrush(
+                connected
+                    ? "#35131E2C"
+                    : "#28111721");
+
+        SideronCoreButton.BorderBrush =
+            CreateBrush(
+                connected
+                    ? "#466A9DBD"
+                    : "#30586878");
     }
 
     private void Files_Click(
@@ -10568,6 +10599,21 @@ public sealed partial class DesktopWindow : Window
             _widgetsLocked =
                 config.WidgetsLocked;
 
+            _widgetCoreSize = NormalizeWidgetSize(config.WidgetCoreSize);
+            _widgetSystemSize = NormalizeWidgetSize(config.WidgetSystemSize);
+            _widgetVoiceSize = NormalizeWidgetSize(config.WidgetVoiceSize);
+            _widgetStorageSize = NormalizeWidgetSize(config.WidgetStorageSize);
+            _widgetNetworkSize = NormalizeWidgetSize(config.WidgetNetworkSize);
+
+            UiLog.Info(
+                $"Widget sizes loaded: core={_widgetCoreSize}, system={_widgetSystemSize}, voice={_widgetVoiceSize}, storage={_widgetStorageSize}, network={_widgetNetworkSize}.");
+
+            ApplyWidgetSize("Core", _widgetCoreSize, save: false);
+            ApplyWidgetSize("System", _widgetSystemSize, save: false);
+            ApplyWidgetSize("Voice", _widgetVoiceSize, save: false);
+            ApplyWidgetSize("Storage", _widgetStorageSize, save: false);
+            ApplyWidgetSize("Network", _widgetNetworkSize, save: false);
+
             if (
                 config.WidgetCoreX >= 0
                 && config.WidgetCoreY >= 0
@@ -10662,6 +10708,12 @@ public sealed partial class DesktopWindow : Window
                         NetworkWidgetCard.Visibility
                             == Visibility.Visible,
 
+                    WidgetCoreSize = _widgetCoreSize,
+                    WidgetSystemSize = _widgetSystemSize,
+                    WidgetVoiceSize = _widgetVoiceSize,
+                    WidgetStorageSize = _widgetStorageSize,
+                    WidgetNetworkSize = _widgetNetworkSize,
+
                     WidgetsAlignment =
                         _widgetsLayoutMode,
 
@@ -10721,6 +10773,9 @@ public sealed partial class DesktopWindow : Window
 
             _config.Save(
                 updated);
+
+            UiLog.Info(
+                $"Widget sizes saved: core={_widgetCoreSize}, system={_widgetSystemSize}, voice={_widgetVoiceSize}, storage={_widgetStorageSize}, network={_widgetNetworkSize}.");
         }
         catch (Exception exception)
         {
@@ -11095,64 +11150,892 @@ public sealed partial class DesktopWindow : Window
         SavePrimaryWindowLayouts();
     }
 
-    private void WidgetCoreToggle_Toggled(
+    private void WidgetLibraryGrid_SizeChanged(
         object sender,
-        RoutedEventArgs e)
+        SizeChangedEventArgs e)
     {
-        CoreStatusCard.Visibility =
-            WidgetCoreToggle.IsOn
-                ? Visibility.Visible
-                : Visibility.Collapsed;
+        UpdateWidgetLibraryGridLayout();
+    }
 
+    private void WidgetManagerPanel_SizeChanged(
+        object sender,
+        SizeChangedEventArgs e)
+    {
+        // The library is inside a ScrollViewer/StackPanel. In that layout, the
+        // Grid can keep its old desired width even while the floating window is
+        // getting narrower, so its own SizeChanged event is not a reliable
+        // signal. Recalculate from the actual floating-window width instead.
+        UpdateWidgetLibraryGridLayout();
+    }
+
+    private void UpdateWidgetLibraryGridLayout()
+    {
+        if (WidgetLibraryGrid is null)
+        {
+            return;
+        }
+
+        const double previewWidth = 220.0;
+        const double spacing = 10.0;
+
+        // Use the widget-manager window as the source of truth. Its width really
+        // changes during a resize, unlike the Grid's desired width inside the
+        // ScrollViewer. 80 px accounts for the panel padding (26 px each side)
+        // plus the library-card padding (14 px each side).
+        var availableWidth = WidgetManagerPanel is not null
+            ? WidgetManagerPanel.ActualWidth - 80.0
+            : WidgetLibraryGrid.ActualWidth;
+
+        availableWidth = Math.Max(previewWidth, availableWidth);
+
+        var columnCount = Math.Max(
+            1,
+            (int)Math.Floor(
+                (availableWidth + spacing)
+                / (previewWidth + spacing)));
+
+        columnCount = Math.Min(
+            Math.Max(1, WidgetLibraryGrid.Children.Count),
+            columnCount);
+
+        var rowCount = (int)Math.Ceiling(
+            WidgetLibraryGrid.Children.Count
+            / (double)columnCount);
+
+        if (
+            WidgetLibraryGrid.ColumnDefinitions.Count == columnCount
+            && WidgetLibraryGrid.RowDefinitions.Count == rowCount
+        )
+        {
+            return;
+        }
+
+        WidgetLibraryGrid.ColumnDefinitions.Clear();
+        WidgetLibraryGrid.RowDefinitions.Clear();
+
+        for (var column = 0; column < columnCount; column++)
+        {
+            WidgetLibraryGrid.ColumnDefinitions.Add(
+                new ColumnDefinition
+                {
+                    Width = new GridLength(previewWidth),
+                });
+        }
+
+        for (var row = 0; row < rowCount; row++)
+        {
+            WidgetLibraryGrid.RowDefinitions.Add(
+                new RowDefinition
+                {
+                    Height = GridLength.Auto,
+                });
+        }
+
+        for (var index = 0; index < WidgetLibraryGrid.Children.Count; index++)
+        {
+            if (WidgetLibraryGrid.Children[index] is not FrameworkElement child)
+            {
+                continue;
+            }
+
+            Grid.SetRow(child, index / columnCount);
+            Grid.SetColumn(child, index % columnCount);
+        }
+    }
+
+    private void WidgetPreview_PointerPressed(
+        object sender,
+        PointerRoutedEventArgs e)
+    {
+        if (
+            sender is not FrameworkElement preview
+            || preview.Tag is not string widgetId
+            || string.IsNullOrWhiteSpace(widgetId)
+            || IsPointerInsideButton(e.OriginalSource)
+        )
+        {
+            return;
+        }
+
+        var point = e.GetCurrentPoint(Root);
+        if (!point.Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        _draggedWidgetPreview = preview;
+        _draggedWidgetPreviewId = widgetId;
+        _widgetPreviewDragStartPointer = point.Position;
+        _widgetPreviewPointerDragActive = false;
+
+        preview.CapturePointer(e.Pointer);
+        e.Handled = true;
+    }
+
+    private void WidgetPreview_PointerMoved(
+        object sender,
+        PointerRoutedEventArgs e)
+    {
+        if (
+            _draggedWidgetPreview is null
+            || !ReferenceEquals(sender, _draggedWidgetPreview)
+        )
+        {
+            return;
+        }
+
+        var point = e.GetCurrentPoint(Root);
+        if (!point.Properties.IsLeftButtonPressed)
+        {
+            FinishWidgetPreviewPointerDrag();
+            return;
+        }
+
+        var dx = point.Position.X - _widgetPreviewDragStartPointer.X;
+        var dy = point.Position.Y - _widgetPreviewDragStartPointer.Y;
+
+        if (
+            !_widgetPreviewPointerDragActive
+            && Math.Sqrt((dx * dx) + (dy * dy)) >= 6.0
+        )
+        {
+            _widgetPreviewPointerDragActive = true;
+            WidgetLibraryDragGhostText.Text =
+                GetWidgetDisplayName(_draggedWidgetPreviewId);
+            WidgetLibraryDragGhost.Visibility = Visibility.Visible;
+        }
+
+        if (_widgetPreviewPointerDragActive)
+        {
+            WidgetLibraryDragGhost.Margin =
+                new Thickness(
+                    point.Position.X + 14,
+                    point.Position.Y + 14,
+                    0,
+                    0);
+            e.Handled = true;
+        }
+    }
+
+    private void WidgetPreview_PointerReleased(
+        object sender,
+        PointerRoutedEventArgs e)
+    {
+        if (
+            _draggedWidgetPreview is null
+            || !ReferenceEquals(sender, _draggedWidgetPreview)
+        )
+        {
+            return;
+        }
+
+        try
+        {
+            if (
+                _widgetPreviewPointerDragActive
+                && !string.IsNullOrWhiteSpace(_draggedWidgetPreviewId)
+            )
+            {
+                var rootPoint = e.GetCurrentPoint(Root).Position;
+
+                if (IsWidgetDropPointOnDesktop(rootPoint))
+                {
+                    PlaceWidgetFromLibrary(
+                        _draggedWidgetPreviewId!,
+                        e.GetCurrentPoint(DesktopWidgetsHost).Position);
+                }
+            }
+        }
+        finally
+        {
+            FinishWidgetPreviewPointerDrag();
+        }
+
+        e.Handled = true;
+    }
+
+    private void WidgetPreview_PointerCanceled(
+        object sender,
+        PointerRoutedEventArgs e)
+    {
+        if (
+            _draggedWidgetPreview is not null
+            && ReferenceEquals(sender, _draggedWidgetPreview)
+        )
+        {
+            FinishWidgetPreviewPointerDrag();
+            e.Handled = true;
+        }
+    }
+
+    private void FinishWidgetPreviewPointerDrag()
+    {
+        _draggedWidgetPreview?.ReleasePointerCaptures();
+        _draggedWidgetPreview = null;
+        _draggedWidgetPreviewId = null;
+        _widgetPreviewPointerDragActive = false;
+
+        if (WidgetLibraryDragGhost is not null)
+        {
+            WidgetLibraryDragGhost.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private bool IsWidgetDropPointOnDesktop(
+        Windows.Foundation.Point rootPoint)
+    {
+        if (
+            rootPoint.X < 0
+            || rootPoint.Y < 0
+            || rootPoint.X > Root.ActualWidth
+            || rootPoint.Y > Root.ActualHeight
+        )
+        {
+            return false;
+        }
+
+        if (
+            WidgetManagerPanel.Visibility == Visibility.Visible
+            && WidgetManagerPanel.ActualWidth > 0
+            && WidgetManagerPanel.ActualHeight > 0
+        )
+        {
+            try
+            {
+                var panelOrigin =
+                    WidgetManagerPanel
+                        .TransformToVisual(Root)
+                        .TransformPoint(
+                            new Windows.Foundation.Point(0, 0));
+
+                if (
+                    rootPoint.X >= panelOrigin.X
+                    && rootPoint.X <= panelOrigin.X + WidgetManagerPanel.ActualWidth
+                    && rootPoint.Y >= panelOrigin.Y
+                    && rootPoint.Y <= panelOrigin.Y + WidgetManagerPanel.ActualHeight
+                )
+                {
+                    return false;
+                }
+            }
+            catch
+            {
+                // If the transform is temporarily unavailable, accept the
+                // desktop coordinates instead of breaking the drag gesture.
+            }
+        }
+
+        return true;
+    }
+
+    private void PlaceWidgetFromLibrary(
+        string widgetId,
+        Windows.Foundation.Point position)
+    {
+        var widget = GetDesktopWidgetById(widgetId);
+        if (widget is null)
+        {
+            return;
+        }
+
+        // Every newly placed widget starts in the smallest preset.
+        ApplyWidgetSize(widgetId, "small", save: false);
+
+        widget.Visibility = Visibility.Visible;
+        Root.UpdateLayout();
+
+        var width =
+            widget.ActualWidth > 0
+                ? widget.ActualWidth
+                : (!double.IsNaN(widget.Width) ? widget.Width : 176.0);
+
+        var height =
+            widget.ActualHeight > 0
+                ? widget.ActualHeight
+                : 100.0;
+
+        SetDesktopWidgetPosition(
+            widget,
+            position.X - (width / 2.0),
+            position.Y - Math.Min(height / 2.0, 55.0));
+
+        ClampDesktopWidgetToWorkspace(widget);
+
+        _widgetsLayoutMode = "custom";
+        SyncWidgetManagerUi();
         SaveWidgetPreferences();
     }
 
-    private void WidgetSystemToggle_Toggled(
+    private void DesktopWidget_RightTapped(
+        object sender,
+        RightTappedRoutedEventArgs e)
+    {
+        if (
+            sender is not FrameworkElement widget
+            || widget.Tag is not string widgetId
+            || string.IsNullOrWhiteSpace(widgetId)
+        )
+        {
+            return;
+        }
+
+        var currentSize = GetWidgetCurrentSize(widgetId);
+        var flyout = new MenuFlyout();
+
+        flyout.Items.Add(
+            new MenuFlyoutItem
+            {
+                Text = "Taille du widget",
+                IsEnabled = false,
+            });
+
+        flyout.Items.Add(new MenuFlyoutSeparator());
+
+        AddWidgetSizeFlyoutItem(flyout, widgetId, "small", "Petit", currentSize);
+        AddWidgetSizeFlyoutItem(flyout, widgetId, "medium", "Moyen", currentSize);
+        AddWidgetSizeFlyoutItem(flyout, widgetId, "large", "Grand", currentSize);
+
+        flyout.Items.Add(new MenuFlyoutSeparator());
+
+        var removeItem = new MenuFlyoutItem
+        {
+            Text = "Supprimer du bureau",
+        };
+
+        removeItem.Click +=
+            (_, _) => RemoveDesktopWidget(widgetId);
+
+        flyout.Items.Add(removeItem);
+
+        flyout.ShowAt(widget);
+        e.Handled = true;
+    }
+
+    private void AddWidgetSizeFlyoutItem(
+        MenuFlyout flyout,
+        string widgetId,
+        string size,
+        string label,
+        string currentSize)
+    {
+        var item = new ToggleMenuFlyoutItem
+        {
+            Text = label,
+            IsChecked = NormalizeWidgetSize(currentSize) == size,
+        };
+
+        item.Click +=
+            (_, _) => ApplyWidgetSize(widgetId, size, save: true);
+
+        flyout.Items.Add(item);
+    }
+
+    private string GetWidgetCurrentSize(string widgetId)
+    {
+        return widgetId.Trim().ToLowerInvariant() switch
+        {
+            "core" => _widgetCoreSize,
+            "system" => _widgetSystemSize,
+            "voice" => _widgetVoiceSize,
+            "storage" => _widgetStorageSize,
+            "network" => _widgetNetworkSize,
+            _ => "small",
+        };
+    }
+
+    private void WidgetSizeButton_Click(
         object sender,
         RoutedEventArgs e)
     {
-        SystemTelemetryCard.Visibility =
-            WidgetSystemToggle.IsOn
-                ? Visibility.Visible
-                : Visibility.Collapsed;
+        if (
+            sender is not FrameworkElement control
+            || control.Tag is not string tag
+        )
+        {
+            return;
+        }
 
+        var parts = tag.Split(':', 2);
+        if (parts.Length != 2)
+        {
+            return;
+        }
+
+        ApplyWidgetSize(parts[0], parts[1], save: true);
+    }
+
+    private void ApplyWidgetSize(
+        string widgetId,
+        string requestedSize,
+        bool save)
+    {
+        var widget = GetDesktopWidgetById(widgetId);
+        if (widget is null)
+        {
+            return;
+        }
+
+        var size = NormalizeWidgetSize(requestedSize);
+
+        // Width follows the selected preset, but height is content-driven.
+        // This prevents empty vertical space while allowing denser layouts
+        // when the user selects Medium or Large.
+        widget.Width = size switch
+        {
+            "medium" => 250.0,
+            "large" => 320.0,
+            _ => 176.0,
+        };
+        widget.Height = double.NaN;
+
+        ConfigureWidgetAdaptiveLayout(widgetId, size);
+
+        switch (widgetId.Trim().ToLowerInvariant())
+        {
+            case "core":
+                _widgetCoreSize = size;
+                break;
+            case "system":
+                _widgetSystemSize = size;
+                break;
+            case "voice":
+                _widgetVoiceSize = size;
+                break;
+            case "storage":
+                _widgetStorageSize = size;
+                break;
+            case "network":
+                _widgetNetworkSize = size;
+                break;
+        }
+
+        Root.UpdateLayout();
+        ClampDesktopWidgetToWorkspace(widget);
+        SyncWidgetManagerSizeLabels();
+
+        if (save)
+        {
+            _widgetsLayoutMode = "custom";
+            SaveWidgetPreferences();
+        }
+    }
+
+    private void ConfigureWidgetAdaptiveLayout(string widgetId, string size)
+    {
+        var normalizedId = widgetId.Trim().ToLowerInvariant();
+        var normalizedSize = NormalizeWidgetSize(size);
+
+        switch (normalizedId)
+        {
+            case "core":
+                ConfigureCoreWidgetLayout(normalizedSize);
+                break;
+            case "system":
+                ConfigureSystemWidgetLayout(normalizedSize);
+                break;
+            case "voice":
+                ConfigureVoiceWidgetLayout(normalizedSize);
+                break;
+            case "storage":
+                ConfigureStorageWidgetLayout(normalizedSize);
+                break;
+            case "network":
+                ConfigureNetworkWidgetLayout(normalizedSize);
+                break;
+        }
+    }
+
+    private static void PrepareAdaptiveGrid(Grid grid, int columns, int rows)
+    {
+        grid.ColumnDefinitions.Clear();
+        grid.RowDefinitions.Clear();
+
+        for (var column = 0; column < columns; column++)
+        {
+            grid.ColumnDefinitions.Add(
+                new ColumnDefinition
+                {
+                    Width = new GridLength(1, GridUnitType.Star),
+                });
+        }
+
+        for (var row = 0; row < rows; row++)
+        {
+            grid.RowDefinitions.Add(
+                new RowDefinition
+                {
+                    Height = GridLength.Auto,
+                });
+        }
+    }
+
+    private static void PlaceWidgetSection(
+        FrameworkElement element,
+        int row,
+        int column = 0,
+        int columnSpan = 1)
+    {
+        Grid.SetRow(element, row);
+        Grid.SetColumn(element, column);
+        Grid.SetColumnSpan(element, columnSpan);
+    }
+
+    private void ConfigureCoreWidgetLayout(string size)
+    {
+        if (size == "small")
+        {
+            PrepareAdaptiveGrid(CoreWidgetLayout, 1, 2);
+            PlaceWidgetSection(CoreWidgetTitle, 0);
+            PlaceWidgetSection(CoreStatusText, 1);
+            CoreStatusText.HorizontalAlignment = HorizontalAlignment.Stretch;
+            return;
+        }
+
+        PrepareAdaptiveGrid(CoreWidgetLayout, 2, 1);
+        PlaceWidgetSection(CoreWidgetTitle, 0, 0);
+        PlaceWidgetSection(CoreStatusText, 0, 1);
+        CoreStatusText.HorizontalAlignment = HorizontalAlignment.Right;
+    }
+
+    private void ConfigureSystemWidgetLayout(string size)
+    {
+        if (size == "small")
+        {
+            PrepareAdaptiveGrid(SystemWidgetLayout, 1, 6);
+            PlaceWidgetSection(SystemHeaderSection, 0);
+            PlaceWidgetSection(SystemCpuSection, 1);
+            PlaceWidgetSection(SystemMemorySection, 2);
+            PlaceWidgetSection(SystemDiskSection, 3);
+            PlaceWidgetSection(SystemUptimeSection, 4);
+            PlaceWidgetSection(SystemNetworkSection, 5);
+            return;
+        }
+
+        if (size == "medium")
+        {
+            PrepareAdaptiveGrid(SystemWidgetLayout, 2, 4);
+            PlaceWidgetSection(SystemHeaderSection, 0, 0, 2);
+            PlaceWidgetSection(SystemCpuSection, 1, 0);
+            PlaceWidgetSection(SystemMemorySection, 1, 1);
+            PlaceWidgetSection(SystemDiskSection, 2, 0);
+            PlaceWidgetSection(SystemUptimeSection, 2, 1);
+            PlaceWidgetSection(SystemNetworkSection, 3, 0, 2);
+            return;
+        }
+
+        // Large keeps two generous columns instead of squeezing three
+        // telemetry blocks into narrow cells. This avoids label/value overlap.
+        PrepareAdaptiveGrid(SystemWidgetLayout, 2, 4);
+        PlaceWidgetSection(SystemHeaderSection, 0, 0, 2);
+        PlaceWidgetSection(SystemCpuSection, 1, 0);
+        PlaceWidgetSection(SystemMemorySection, 1, 1);
+        PlaceWidgetSection(SystemDiskSection, 2, 0);
+        PlaceWidgetSection(SystemNetworkSection, 2, 1);
+        PlaceWidgetSection(SystemUptimeSection, 3, 0, 2);
+    }
+
+    private void ConfigureVoiceWidgetLayout(string size)
+    {
+        if (size == "small")
+        {
+            PrepareAdaptiveGrid(VoiceWidgetLayout, 1, 5);
+            PlaceWidgetSection(VoiceHeaderSection, 0);
+            PlaceWidgetSection(VoiceStateSection, 1);
+            PlaceWidgetSection(VoiceWidgetModeText, 2);
+            PlaceWidgetSection(VoiceDividerSection, 3);
+            PlaceWidgetSection(VoiceWakeWordSection, 4);
+            return;
+        }
+
+        PrepareAdaptiveGrid(VoiceWidgetLayout, 2, 4);
+        PlaceWidgetSection(VoiceHeaderSection, 0, 0, 2);
+        PlaceWidgetSection(VoiceStateSection, 1, 0);
+        PlaceWidgetSection(VoiceWidgetModeText, 1, 1);
+        PlaceWidgetSection(VoiceDividerSection, 2, 0, 2);
+        PlaceWidgetSection(VoiceWakeWordSection, 3, 0, 2);
+    }
+
+    private void ConfigureStorageWidgetLayout(string size)
+    {
+        if (size == "small")
+        {
+            PrepareAdaptiveGrid(StorageWidgetLayout, 1, 6);
+            PlaceWidgetSection(StorageHeaderSection, 0);
+            PlaceWidgetSection(StorageWidgetRootText, 1);
+            PlaceWidgetSection(StorageWidgetUsageBar, 2);
+            PlaceWidgetSection(StorageUsedSection, 3);
+            PlaceWidgetSection(StorageFreeSection, 4);
+            PlaceWidgetSection(StorageVolumeSection, 5);
+            return;
+        }
+
+        if (size == "medium")
+        {
+            PrepareAdaptiveGrid(StorageWidgetLayout, 2, 5);
+            PlaceWidgetSection(StorageHeaderSection, 0, 0, 2);
+            PlaceWidgetSection(StorageWidgetRootText, 1, 0, 2);
+            PlaceWidgetSection(StorageWidgetUsageBar, 2, 0, 2);
+            PlaceWidgetSection(StorageUsedSection, 3, 0);
+            PlaceWidgetSection(StorageFreeSection, 3, 1);
+            PlaceWidgetSection(StorageVolumeSection, 4, 0, 2);
+            return;
+        }
+
+        // Large favors legibility over three cramped columns.
+        PrepareAdaptiveGrid(StorageWidgetLayout, 2, 5);
+        PlaceWidgetSection(StorageHeaderSection, 0, 0, 2);
+        PlaceWidgetSection(StorageWidgetRootText, 1, 0, 2);
+        PlaceWidgetSection(StorageWidgetUsageBar, 2, 0, 2);
+        PlaceWidgetSection(StorageUsedSection, 3, 0);
+        PlaceWidgetSection(StorageFreeSection, 3, 1);
+        PlaceWidgetSection(StorageVolumeSection, 4, 0, 2);
+    }
+
+    private void ConfigureNetworkWidgetLayout(string size)
+    {
+        if (size == "small")
+        {
+            PrepareAdaptiveGrid(NetworkWidgetLayout, 1, 6);
+            PlaceWidgetSection(NetworkHeaderSection, 0);
+            PlaceWidgetSection(NetworkWidgetTypeText, 1);
+            PlaceWidgetSection(NetworkWidgetAdapterText, 2);
+            PlaceWidgetSection(NetworkRatesSection, 3);
+            PlaceWidgetSection(NetworkDividerSection, 4);
+            PlaceWidgetSection(NetworkIpv4Section, 5);
+            return;
+        }
+
+        if (size == "medium")
+        {
+            PrepareAdaptiveGrid(NetworkWidgetLayout, 2, 5);
+            PlaceWidgetSection(NetworkHeaderSection, 0, 0, 2);
+            PlaceWidgetSection(NetworkWidgetTypeText, 1, 0);
+            PlaceWidgetSection(NetworkWidgetAdapterText, 1, 1);
+            PlaceWidgetSection(NetworkRatesSection, 2, 0, 2);
+            PlaceWidgetSection(NetworkDividerSection, 3, 0, 2);
+            PlaceWidgetSection(NetworkIpv4Section, 4, 0, 2);
+            return;
+        }
+
+        // Large remains airy: identity on one row, rates below, IPv4 full width.
+        PrepareAdaptiveGrid(NetworkWidgetLayout, 2, 5);
+        PlaceWidgetSection(NetworkHeaderSection, 0, 0, 2);
+        PlaceWidgetSection(NetworkWidgetTypeText, 1, 0);
+        PlaceWidgetSection(NetworkWidgetAdapterText, 1, 1);
+        PlaceWidgetSection(NetworkRatesSection, 2, 0, 2);
+        PlaceWidgetSection(NetworkDividerSection, 3, 0, 2);
+        PlaceWidgetSection(NetworkIpv4Section, 4, 0, 2);
+    }
+
+    private static string NormalizeWidgetSize(string? size)
+    {
+        return size?.Trim().ToLowerInvariant() switch
+        {
+            "medium" => "medium",
+            "large" => "large",
+            _ => "small",
+        };
+    }
+
+    private static string GetWidgetSizeLabel(string size)
+    {
+        return NormalizeWidgetSize(size) switch
+        {
+            "medium" => "Moyen",
+            "large" => "Grand",
+            _ => "Petit",
+        };
+    }
+
+    private static string GetWidgetDisplayName(string? widgetId)
+    {
+        return widgetId?.Trim().ToLowerInvariant() switch
+        {
+            "core" => "Sideron Core",
+            "system" => "Système",
+            "voice" => "Voix & écoute",
+            "storage" => "Stockage SIDERON",
+            "network" => "Réseau",
+            _ => "Widget SIDERON",
+        };
+    }
+
+    private void SyncWidgetManagerSizeLabels()
+    {
+        if (WidgetCoreSizeState is null)
+        {
+            return;
+        }
+
+        WidgetCoreSizeState.Text = $"Taille : {GetWidgetSizeLabel(_widgetCoreSize)}";
+        WidgetSystemSizeState.Text = $"Taille : {GetWidgetSizeLabel(_widgetSystemSize)}";
+        WidgetVoiceSizeState.Text = $"Taille : {GetWidgetSizeLabel(_widgetVoiceSize)}";
+        WidgetStorageSizeState.Text = $"Taille : {GetWidgetSizeLabel(_widgetStorageSize)}";
+        WidgetNetworkSizeState.Text = $"Taille : {GetWidgetSizeLabel(_widgetNetworkSize)}";
+    }
+
+    private void WidgetPreview_DragStarting(
+        UIElement sender,
+        DragStartingEventArgs e)
+    {
+        if (
+            sender is not FrameworkElement preview
+            || preview.Tag is not string widgetId
+            || string.IsNullOrWhiteSpace(widgetId)
+        )
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        e.Data.SetText(widgetId);
+        e.Data.RequestedOperation =
+            DataPackageOperation.Move;
+    }
+
+    private void DesktopWidgetsHost_DragOver(
+        object sender,
+        DragEventArgs e)
+    {
+        if (
+            e.DataView.Contains(
+                StandardDataFormats.Text)
+        )
+        {
+            e.AcceptedOperation =
+                DataPackageOperation.Move;
+
+            e.DragUIOverride.Caption =
+                "Déposer sur le bureau SIDERON";
+
+            e.DragUIOverride.IsCaptionVisible =
+                true;
+
+            e.Handled =
+                true;
+        }
+    }
+
+    private async void DesktopWidgetsHost_Drop(
+        object sender,
+        DragEventArgs e)
+    {
+        if (
+            !e.DataView.Contains(
+                StandardDataFormats.Text)
+        )
+        {
+            return;
+        }
+
+        string widgetId;
+
+        try
+        {
+            widgetId =
+                await e.DataView.GetTextAsync();
+        }
+        catch (Exception exception)
+        {
+            UiLog.Error(
+                "Unable to read dragged widget identifier.",
+                exception);
+            return;
+        }
+
+        var widget =
+            GetDesktopWidgetById(
+                widgetId);
+
+        if (widget is null)
+        {
+            return;
+        }
+
+        widget.Visibility =
+            Visibility.Visible;
+
+        Root.UpdateLayout();
+
+        var position =
+            e.GetPosition(
+                DesktopWidgetsHost);
+
+        var width =
+            widget.ActualWidth > 0
+                ? widget.ActualWidth
+                : !double.IsNaN(widget.Width)
+                    ? widget.Width
+                    : 180.0;
+
+        var height =
+            widget.ActualHeight > 0
+                ? widget.ActualHeight
+                : 100.0;
+
+        SetDesktopWidgetPosition(
+            widget,
+            position.X - (width / 2.0),
+            position.Y - Math.Min(
+                height / 2.0,
+                55.0));
+
+        ClampDesktopWidgetToWorkspace(
+            widget);
+
+        _widgetsLayoutMode =
+            "custom";
+
+        SyncWidgetManagerUi();
+        SaveWidgetPreferences();
+
+        e.AcceptedOperation =
+            DataPackageOperation.Move;
+
+        e.Handled =
+            true;
+    }
+
+    private void RemoveDesktopWidget(string widgetId)
+    {
+        var widget = GetDesktopWidgetById(widgetId);
+
+        if (widget is null)
+        {
+            return;
+        }
+
+        widget.Visibility = Visibility.Collapsed;
+        _widgetsLayoutMode = "custom";
+        SyncWidgetManagerUi();
         SaveWidgetPreferences();
     }
 
-    private void WidgetVoiceToggle_Toggled(
+    private void RemoveWidgetPreview_Click(
         object sender,
         RoutedEventArgs e)
     {
-        VoiceListeningCard.Visibility =
-            WidgetVoiceToggle.IsOn
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-
-        SaveWidgetPreferences();
+        if (
+            sender is FrameworkElement control
+            && control.Tag is string widgetId
+        )
+        {
+            RemoveDesktopWidget(widgetId);
+        }
     }
 
-    private void WidgetStorageToggle_Toggled(
-        object sender,
-        RoutedEventArgs e)
+    private FrameworkElement? GetDesktopWidgetById(
+        string widgetId)
     {
-        StorageWidgetCard.Visibility =
-            WidgetStorageToggle.IsOn
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-
-        SaveWidgetPreferences();
-    }
-
-    private void WidgetNetworkToggle_Toggled(
-        object sender,
-        RoutedEventArgs e)
-    {
-        NetworkWidgetCard.Visibility =
-            WidgetNetworkToggle.IsOn
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-
-        SaveWidgetPreferences();
+        return widgetId.Trim().ToLowerInvariant() switch
+        {
+            "core" => CoreStatusCard,
+            "system" => SystemTelemetryCard,
+            "voice" => VoiceListeningCard,
+            "storage" => StorageWidgetCard,
+            "network" => NetworkWidgetCard,
+            _ => null,
+        };
     }
 
     private void WidgetsEditModeToggle_Toggled(
@@ -11315,25 +12198,53 @@ public sealed partial class DesktopWindow : Window
 
     private void SyncWidgetManagerUi()
     {
-        WidgetCoreToggle.IsOn =
+        var coreVisible =
             CoreStatusCard.Visibility
                 == Visibility.Visible;
 
-        WidgetSystemToggle.IsOn =
+        var systemVisible =
             SystemTelemetryCard.Visibility
                 == Visibility.Visible;
 
-        WidgetVoiceToggle.IsOn =
+        var voiceVisible =
             VoiceListeningCard.Visibility
                 == Visibility.Visible;
 
-        WidgetStorageToggle.IsOn =
+        var storageVisible =
             StorageWidgetCard.Visibility
                 == Visibility.Visible;
 
-        WidgetNetworkToggle.IsOn =
+        var networkVisible =
             NetworkWidgetCard.Visibility
                 == Visibility.Visible;
+
+        WidgetCorePreviewState.Text =
+            coreVisible
+                ? "Sur le bureau"
+                : "Disponible";
+
+        WidgetSystemPreviewState.Text =
+            systemVisible
+                ? "Sur le bureau"
+                : "Disponible";
+
+        WidgetVoicePreviewState.Text =
+            voiceVisible
+                ? "Sur le bureau"
+                : "Disponible";
+
+        WidgetStoragePreviewState.Text =
+            storageVisible
+                ? "Sur le bureau"
+                : "Disponible";
+
+        WidgetNetworkPreviewState.Text =
+            networkVisible
+                ? "Sur le bureau"
+                : "Disponible";
+
+
+        SyncWidgetManagerSizeLabels();
 
         _applyingWidgetPreferences =
             true;
@@ -11421,13 +12332,7 @@ public sealed partial class DesktopWindow : Window
         UiLog.Info(
             "Sideron Desktop exit requested by user.");
 
-        // Dès que l'utilisateur confirme, on arrête de protéger
-        // l'affichage Sideron et on restaure Windows immédiatement.
         // La fermeture de l'UI ne doit jamais dépendre d'un pipe IPC.
-        _taskbarGuardTimer.Stop();
-
-        _taskbarVisibility.Restore();
-
         try
         {
             if (_coreProcess.OwnsCoreProcess)

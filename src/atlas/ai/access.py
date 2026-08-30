@@ -1,4 +1,4 @@
-"""Personal proxy access, protected for the current Windows user (DPAPI)."""
+"""SIDERON relay access, provisioned by Setup and protected with Windows DPAPI."""
 import ctypes
 from ctypes import wintypes
 import os
@@ -6,7 +6,7 @@ from pathlib import Path
 
 from openai import AsyncOpenAI
 
-PROXY_URL = "https://atlasbot.freeboxos.fr/atlas-api/v1/"
+PROXY_URL = "https://atlasbot.freeboxos.fr/sideron-api/v1/"
 
 
 def access_path():
@@ -16,7 +16,7 @@ def access_path():
 
 def decrypt_access(data):
     if os.name != "nt":
-        raise RuntimeError("L’activation Sideron protégée nécessite Windows.")
+        raise RuntimeError("L’accès SIDERON protégé nécessite Windows.")
 
     class Blob(ctypes.Structure):
         _fields_ = [("length", wintypes.DWORD), ("data", ctypes.POINTER(ctypes.c_ubyte))]
@@ -31,11 +31,11 @@ def decrypt_access(data):
     kernel.LocalFree.argtypes = [ctypes.c_void_p]
     kernel.LocalFree.restype = ctypes.c_void_p
     if not crypt.CryptUnprotectData(ctypes.byref(source), None, None, None, None, 1, ctypes.byref(target)):
-        raise RuntimeError("Activation Sideron illisible : réactivez ce compte Windows.")
+        raise RuntimeError("Accès SIDERON illisible : réparez ou réinstallez SIDERON pour ce compte Windows.")
     try:
         token = ctypes.string_at(target.data, target.length).decode("ascii")
-        if not token.startswith("atlas_") or len(token) > 128:
-            raise ValueError("Invalid activation")
+        if not token.startswith("sideron_") or len(token) > 128:
+            raise ValueError("Invalid SIDERON access")
         return token
     finally:
         kernel.LocalFree(target.data)
@@ -53,4 +53,4 @@ def create_client():
         # Retain direct access for the developer, with an explicit trusted endpoint.
         return AsyncOpenAI(api_key=key, base_url="https://api.openai.com/v1/",
                            websocket_base_url="wss://api.openai.com/v1/")
-    raise RuntimeError("Sideron non activé : exécutez votre fichier Activer-Sideron.ps1 puis redémarrez le Core.")
+    raise RuntimeError("Accès SIDERON absent : lancez une réparation ou réinstallez SIDERON.")

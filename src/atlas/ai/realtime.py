@@ -141,7 +141,6 @@ class RealtimeManager:
             )
 
         finally:
-
             self.connection = None
             self._connected = False
 

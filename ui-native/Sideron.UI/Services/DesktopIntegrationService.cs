@@ -39,6 +39,16 @@ public static class DesktopIntegrationService
     private static readonly IntPtr HWND_TOP =
         IntPtr.Zero;
 
+    private static readonly IntPtr HWND_TOPMOST =
+        new(-1);
+
+    private static readonly IntPtr HWND_NOTOPMOST =
+        new(-2);
+
+    private const int SW_HIDE = 0;
+    private const int SW_SHOW = 5;
+    private const int SW_RESTORE = 9;
+
     public static bool AttachInteractiveDesktop(
         Window window)
     {
@@ -59,24 +69,18 @@ public static class DesktopIntegrationService
             ConfigureBorderlessWindow(
                 hwnd);
 
-            var desktopOwner =
-                FindDesktopOwnerWindow();
-
-            if (desktopOwner == IntPtr.Zero)
-            {
-                UiLog.Error(
-                    "DesktopIntegration: SHELLDLL_DefView/desktop owner not found.");
-
-                return false;
-            }
-
-            UiLog.Info(
-                $"DesktopIntegration: desktop owner = 0x{desktopOwner.ToInt64():X}.");
-
+            // Ne pas donner la fenêtre du bureau Windows comme propriétaire à
+            // SIDERON. Une fenêtre top-level possédée par le shell est exclue
+            // de la barre des tâches, même avec WS_EX_APPWINDOW.
+            //
+            // SIDERON reste visuellement intégré au bureau grâce à sa fenêtre
+            // sans bordure positionnée sur la WorkArea, mais demeure une vraie
+            // fenêtre d'application afin que Windows crée son bouton dans la
+            // barre des tâches et permette d'y revenir facilement.
             SetWindowLongPtr(
                 hwnd,
                 GWLP_HWNDPARENT,
-                desktopOwner);
+                IntPtr.Zero);
 
             DisableDwmFrame(
                 hwnd);
@@ -91,11 +95,18 @@ public static class DesktopIntegrationService
                 SWP_NOMOVE
                 | SWP_NOSIZE
                 | SWP_NOACTIVATE
-                | SWP_FRAMECHANGED
-                | SWP_SHOWWINDOW);
+                | SWP_FRAMECHANGED);
+
+            // Explorer décide normalement tout seul si une fenêtre doit avoir
+            // un bouton dans la barre des tâches. Comme SIDERON utilise une
+            // fenêtre WinUI sans bordure de type WS_POPUP, on force ici le
+            // rafraîchissement du Shell puis on l'enregistre explicitement
+            // auprès d'ITaskbarList. Cela évite le cas observé où la fenêtre
+            // apparaît dans Alt+Tab mais pas dans la barre des tâches.
+            RefreshTaskbarRegistration(hwnd);
 
             UiLog.Info(
-                "DesktopIntegration: Sideron Desktop attached to the shell.");
+                "DesktopIntegration: Sideron Desktop registered as a top-level taskbar application window.");
 
             return true;
         }
@@ -106,6 +117,201 @@ public static class DesktopIntegrationService
                 exception);
 
             return false;
+        }
+    }
+
+    public static bool BringToForeground(
+        Window window)
+    {
+        try
+        {
+            var hwnd =
+                WindowNative.GetWindowHandle(
+                    window);
+
+            if (hwnd == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            // Si Windows a minimisé la fenêtre via son bouton de barre des
+            // tâches, on la restaure avant de la remettre au sommet du Z-order.
+            if (IsIconic(hwnd))
+            {
+                ShowWindow(
+                    hwnd,
+                    SW_RESTORE);
+            }
+
+            // La barre des tâches Explorer est elle-même topmost. Pour que le
+            // plein écran SIDERON la recouvre uniquement lorsque SIDERON est
+            // l'application active, on élève temporairement la fenêtre au
+            // niveau TOPMOST. Le handler Activated retire cet état dès que la
+            // fenêtre perd le focus.
+            SetWindowPos(
+                hwnd,
+                HWND_TOPMOST,
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE
+                | SWP_NOSIZE
+                | SWP_SHOWWINDOW);
+
+            BringWindowToTop(hwnd);
+            SetForegroundWindow(hwnd);
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            UiLog.Error(
+                "DesktopIntegration: unable to bring Sideron to foreground.",
+                exception);
+
+            return false;
+        }
+    }
+
+
+    public static bool SetForegroundPriority(
+        Window window,
+        bool active)
+    {
+        try
+        {
+            var hwnd =
+                WindowNative.GetWindowHandle(
+                    window);
+
+            if (hwnd == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            SetWindowPos(
+                hwnd,
+                active
+                    ? HWND_TOPMOST
+                    : HWND_NOTOPMOST,
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE
+                | SWP_NOSIZE
+                | SWP_NOACTIVATE);
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            UiLog.Error(
+                "DesktopIntegration: unable to update Sideron foreground priority.",
+                exception);
+
+            return false;
+        }
+    }
+
+    public static bool EnsureTaskbarButton(
+        Window window)
+    {
+        try
+        {
+            var hwnd =
+                WindowNative.GetWindowHandle(
+                    window);
+
+            if (hwnd == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            // Le Shell ne doit voir ni owner ni WS_EX_TOOLWINDOW.
+            SetWindowLongPtr(
+                hwnd,
+                GWLP_HWNDPARENT,
+                IntPtr.Zero);
+
+            var extended =
+                GetWindowLongPtr(
+                    hwnd,
+                    GWL_EXSTYLE)
+                .ToInt64();
+
+            extended &=
+                ~WS_EX_TOOLWINDOW;
+
+            extended |=
+                WS_EX_APPWINDOW;
+
+            SetWindowLongPtr(
+                hwnd,
+                GWL_EXSTYLE,
+                new IntPtr(extended));
+
+            SetWindowPos(
+                hwnd,
+                HWND_TOP,
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE
+                | SWP_NOSIZE
+                | SWP_NOACTIVATE
+                | SWP_FRAMECHANGED);
+
+            RefreshTaskbarRegistration(hwnd);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            UiLog.Error(
+                "DesktopIntegration: unable to ensure taskbar button.",
+                exception);
+
+            return false;
+        }
+    }
+
+    private static void RefreshTaskbarRegistration(
+        IntPtr hwnd)
+    {
+        // Un Hide/Show après un changement de style force Explorer à
+        // réévaluer l'éligibilité de la fenêtre pour la barre des tâches.
+        ShowWindow(
+            hwnd,
+            SW_HIDE);
+
+        ShowWindow(
+            hwnd,
+            SW_SHOW);
+
+        try
+        {
+            var taskbar =
+                (ITaskbarList)new CTaskbarList();
+
+            taskbar.HrInit();
+            taskbar.AddTab(hwnd);
+            taskbar.ActivateTab(hwnd);
+
+            if (Marshal.IsComObject(taskbar))
+            {
+                Marshal.FinalReleaseComObject(taskbar);
+            }
+        }
+        catch (Exception exception)
+        {
+            // Le style WS_EX_APPWINDOW reste le mécanisme standard.
+            // ITaskbarList est un renfort explicite pour les builds Explorer
+            // qui ne recréent pas spontanément le bouton après le changement.
+            UiLog.Error(
+                "DesktopIntegration: explicit ITaskbarList registration failed.",
+                exception);
         }
     }
 
@@ -293,6 +499,24 @@ public static class DesktopIntegrationService
         SMTO_NORMAL = 0x0000,
     }
 
+    [ComImport]
+    [Guid("56FDF344-FD6D-11D0-958A-006097C9A090")]
+    private class CTaskbarList
+    {
+    }
+
+    [ComImport]
+    [Guid("56FDF342-FD6D-11D0-958A-006097C9A090")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface ITaskbarList
+    {
+        void HrInit();
+        void AddTab(IntPtr hwnd);
+        void DeleteTab(IntPtr hwnd);
+        void ActivateTab(IntPtr hwnd);
+        void SetActiveAlt(IntPtr hwnd);
+    }
+
     [DllImport(
         "user32.dll",
         CharSet = CharSet.Unicode)]
@@ -368,6 +592,27 @@ public static class DesktopIntegrationService
         int width,
         int height,
         uint flags);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool ShowWindow(
+        IntPtr hwnd,
+        int command);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(
+        IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool BringWindowToTop(
+        IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsIconic(
+        IntPtr hwnd);
 
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(

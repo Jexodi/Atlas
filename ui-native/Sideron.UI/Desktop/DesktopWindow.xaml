@@ -298,9 +298,10 @@
             </LinearGradientBrush>
         </Grid.Background>
 
-        <Canvas IsHitTestVisible="False" Opacity="0.42">
+        <Canvas Opacity="0.42" IsHitTestVisible="False">
 
             <Ellipse
+                IsHitTestVisible="False"
                 Width="720"
                 Height="720"
                 Canvas.Left="-190"
@@ -309,6 +310,7 @@
                 StrokeThickness="3" />
 
             <Ellipse
+                IsHitTestVisible="False"
                 Width="920"
                 Height="920"
                 Canvas.Left="1020"
@@ -317,6 +319,7 @@
                 StrokeThickness="2" />
 
             <Rectangle
+                IsHitTestVisible="False"
                 Width="1350"
                 Height="2"
                 Canvas.Left="-120"
@@ -329,120 +332,7 @@
 
             </Rectangle>
 
-            <Border
-                x:Name="NetworkWidgetCard"
-                Tag="Network"
-                PointerPressed="DesktopWidget_PointerPressed"
-                PointerMoved="DesktopWidget_PointerMoved"
-                PointerReleased="DesktopWidget_PointerReleased"
-                PointerCanceled="DesktopWidget_PointerCanceled"
-                Width="202"
-                Padding="16,14"
-                CornerRadius="16"
-                Background="#34111A27"
-                BorderBrush="#2D5DCBFF"
-                BorderThickness="1">
 
-                <StackPanel Spacing="10">
-
-                    <Grid>
-
-                        <TextBlock
-                            Text="RÉSEAU"
-                            VerticalAlignment="Center"
-                            FontSize="9"
-                            CharacterSpacing="130"
-                            Foreground="#7CA8C2" />
-
-                        <FontIcon
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Glyph="&#xE701;"
-                            FontSize="13"
-                            Foreground="#77D9FF" />
-
-                    </Grid>
-
-                    <TextBlock
-                        x:Name="NetworkWidgetTypeText"
-                        Text="--"
-                        FontSize="13"
-                        FontWeight="SemiBold"
-                        Foreground="#E7F5FF" />
-
-                    <TextBlock
-                        x:Name="NetworkWidgetAdapterText"
-                        Text="--"
-                        TextTrimming="CharacterEllipsis"
-                        FontSize="10"
-                        Foreground="#91AABD" />
-
-                    <Grid ColumnSpacing="12">
-
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Spacing="3">
-
-                            <TextBlock
-                                Text="↓ RÉCEPTION"
-                                FontSize="9"
-                                Foreground="#7899AD" />
-
-                            <TextBlock
-                                x:Name="NetworkWidgetDownloadText"
-                                Text="--"
-                                FontSize="11"
-                                FontWeight="SemiBold"
-                                Foreground="#DDEEFF" />
-
-                        </StackPanel>
-
-                        <StackPanel
-                            Grid.Column="1"
-                            Spacing="3">
-
-                            <TextBlock
-                                Text="↑ ENVOI"
-                                FontSize="9"
-                                Foreground="#7899AD" />
-
-                            <TextBlock
-                                x:Name="NetworkWidgetUploadText"
-                                Text="--"
-                                FontSize="11"
-                                FontWeight="SemiBold"
-                                Foreground="#DDEEFF" />
-
-                        </StackPanel>
-
-                    </Grid>
-
-                    <Border
-                        Height="1"
-                        Background="#22576F84" />
-
-                    <Grid>
-
-                        <TextBlock
-                            Text="IPv4"
-                            FontSize="9"
-                            Foreground="#7899AD" />
-
-                        <TextBlock
-                            x:Name="NetworkWidgetIpv4Text"
-                            HorizontalAlignment="Right"
-                            Text="--"
-                            FontSize="10"
-                            Foreground="#A8C6D6" />
-
-                    </Grid>
-
-                </StackPanel>
-
-            </Border>
 
         </Canvas>
 
@@ -473,7 +363,10 @@
         <Canvas
             x:Name="DesktopWidgetsHost"
             HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch">
+            VerticalAlignment="Stretch"
+            AllowDrop="True"
+            DragOver="DesktopWidgetsHost_DragOver"
+            Drop="DesktopWidgetsHost_Drop">
 
             <Border
                 x:Name="CoreStatusCard"
@@ -482,6 +375,7 @@
                 PointerMoved="DesktopWidget_PointerMoved"
                 PointerReleased="DesktopWidget_PointerReleased"
                 PointerCanceled="DesktopWidget_PointerCanceled"
+                RightTapped="DesktopWidget_RightTapped"
                 Width="176"
                 Padding="16,13"
                 CornerRadius="16"
@@ -489,8 +383,9 @@
                 BorderBrush="#355DCBFF"
                 BorderThickness="1">
 
-                <StackPanel Spacing="4">
+                <Grid x:Name="CoreWidgetLayout" RowSpacing="5" ColumnSpacing="12">
                     <TextBlock
+                        x:Name="CoreWidgetTitle"
                         Text="SIDERON"
                         FontSize="9"
                         CharacterSpacing="150"
@@ -499,10 +394,11 @@
                     <TextBlock
                         x:Name="CoreStatusText"
                         Text="Core non connecté"
+                        TextWrapping="Wrap"
                         FontSize="13"
                         FontWeight="SemiBold"
                         Foreground="#E7F5FF" />
-                </StackPanel>
+                </Grid>
 
             </Border>
 
@@ -513,145 +409,76 @@
                 PointerMoved="DesktopWidget_PointerMoved"
                 PointerReleased="DesktopWidget_PointerReleased"
                 PointerCanceled="DesktopWidget_PointerCanceled"
-                Width="202"
+                RightTapped="DesktopWidget_RightTapped"
+                Width="176"
                 Padding="16,14"
                 CornerRadius="16"
                 Background="#34111A27"
                 BorderBrush="#2D5DCBFF"
                 BorderThickness="1">
 
-                <StackPanel Spacing="11">
-
-                    <Grid>
-
-                        <TextBlock
-                            Text="SYSTÈME"
-                            VerticalAlignment="Center"
-                            FontSize="9"
-                            CharacterSpacing="150"
-                            Foreground="#7CA8C2" />
-
-                        <Button
-                            Width="25"
-                            Height="25"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Padding="0"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Click="OpenSystemPanel_Click"
-                            ToolTipService.ToolTip="Détails système">
-
-                            <FontIcon
-                                Glyph="&#xE72A;"
-                                FontSize="11"
-                                Foreground="#89CAE8" />
-
+                <Grid x:Name="SystemWidgetLayout" RowSpacing="9" ColumnSpacing="14">
+                    <Grid x:Name="SystemHeaderSection">
+                        <TextBlock Text="SYSTÈME" VerticalAlignment="Center" FontSize="9" CharacterSpacing="150" Foreground="#7CA8C2" />
+                        <Button Width="25" Height="25" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="0" Background="Transparent" BorderThickness="0" Click="OpenSystemPanel_Click" ToolTipService.ToolTip="Détails système">
+                            <FontIcon Glyph="&#xE72A;" FontSize="11" Foreground="#89CAE8" />
                         </Button>
-
                     </Grid>
 
-                    <StackPanel Spacing="5">
-
-                        <Grid>
-                            <TextBlock
-                                Text="CPU"
-                                FontSize="10"
-                                Foreground="#8DAFC2" />
-
-                            <TextBlock
-                                x:Name="CpuTelemetryText"
-                                HorizontalAlignment="Right"
-                                Text="-- %"
-                                FontSize="11"
-                                FontWeight="SemiBold"
-                                Foreground="#E7F5FF" />
+                    <StackPanel x:Name="SystemCpuSection" Spacing="5">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="CPU" FontSize="10" Foreground="#8DAFC2" />
+                            <TextBlock Grid.Column="1" x:Name="CpuTelemetryText" HorizontalAlignment="Right" Text="-- %" TextTrimming="CharacterEllipsis" FontSize="11" FontWeight="SemiBold" Foreground="#E7F5FF" />
                         </Grid>
-
-                        <ProgressBar
-                            x:Name="CpuTelemetryBar"
-                            Style="{StaticResource SideronTelemetryProgressBarStyle}" />
-
+                        <ProgressBar x:Name="CpuTelemetryBar" Style="{StaticResource SideronTelemetryProgressBarStyle}" />
                     </StackPanel>
 
-                    <StackPanel Spacing="5">
-
-                        <Grid>
-                            <TextBlock
-                                Text="RAM"
-                                FontSize="10"
-                                Foreground="#8DAFC2" />
-
-                            <TextBlock
-                                x:Name="MemoryTelemetryText"
-                                HorizontalAlignment="Right"
-                                Text="-- %"
-                                FontSize="11"
-                                FontWeight="SemiBold"
-                                Foreground="#E7F5FF" />
+                    <StackPanel x:Name="SystemMemorySection" Spacing="5">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="RAM" FontSize="10" Foreground="#8DAFC2" />
+                            <TextBlock Grid.Column="1" x:Name="MemoryTelemetryText" HorizontalAlignment="Right" Text="-- %" TextTrimming="CharacterEllipsis" FontSize="11" FontWeight="SemiBold" Foreground="#E7F5FF" />
                         </Grid>
-
-                        <ProgressBar
-                            x:Name="MemoryTelemetryBar"
-                            Style="{StaticResource SideronTelemetryProgressBarStyle}" />
-
+                        <ProgressBar x:Name="MemoryTelemetryBar" Style="{StaticResource SideronTelemetryProgressBarStyle}" />
                     </StackPanel>
 
-                    <StackPanel Spacing="5">
-
-                        <Grid>
-                            <TextBlock
-                                x:Name="DiskTelemetryLabel"
-                                Text="DISQUE"
-                                FontSize="10"
-                                Foreground="#8DAFC2" />
-
-                            <TextBlock
-                                x:Name="DiskTelemetryText"
-                                HorizontalAlignment="Right"
-                                Text="-- %"
-                                FontSize="11"
-                                FontWeight="SemiBold"
-                                Foreground="#E7F5FF" />
+                    <StackPanel x:Name="SystemDiskSection" Spacing="5">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="DiskTelemetryLabel" Text="DISQUE" TextTrimming="CharacterEllipsis" FontSize="10" Foreground="#8DAFC2" />
+                            <TextBlock Grid.Column="1" x:Name="DiskTelemetryText" HorizontalAlignment="Right" Text="-- %" TextTrimming="CharacterEllipsis" FontSize="11" FontWeight="SemiBold" Foreground="#E7F5FF" />
                         </Grid>
-
-                        <ProgressBar
-                            x:Name="DiskTelemetryBar"
-                            Style="{StaticResource SideronTelemetryProgressBarStyle}" />
-
+                        <ProgressBar x:Name="DiskTelemetryBar" Style="{StaticResource SideronTelemetryProgressBarStyle}" />
                     </StackPanel>
 
-                    <Grid>
-                        <TextBlock
-                            Text="UPTIME"
-                            FontSize="10"
-                            Foreground="#8DAFC2" />
-
-                        <TextBlock
-                            x:Name="UptimeTelemetryText"
-                            HorizontalAlignment="Right"
-                            Text="--"
-                            FontSize="11"
-                            FontWeight="SemiBold"
-                            Foreground="#E7F5FF" />
+                    <Grid x:Name="SystemUptimeSection" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="UPTIME" FontSize="10" Foreground="#8DAFC2" />
+                        <TextBlock Grid.Column="1" x:Name="UptimeTelemetryText" HorizontalAlignment="Right" Text="--" TextTrimming="CharacterEllipsis" FontSize="11" FontWeight="SemiBold" Foreground="#E7F5FF" />
                     </Grid>
 
-                    <Grid>
-                        <TextBlock
-                            Text="RÉSEAU"
-                            FontSize="10"
-                            Foreground="#8DAFC2" />
-
-                        <TextBlock
-                            x:Name="NetworkTelemetryText"
-                            HorizontalAlignment="Right"
-                            Text="--"
-                            FontSize="11"
-                            FontWeight="SemiBold"
-                            Foreground="#E7F5FF" />
+                    <Grid x:Name="SystemNetworkSection" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="RÉSEAU" FontSize="10" Foreground="#8DAFC2" />
+                        <TextBlock Grid.Column="1" x:Name="NetworkTelemetryText" HorizontalAlignment="Right" Text="--" TextTrimming="CharacterEllipsis" FontSize="11" FontWeight="SemiBold" Foreground="#E7F5FF" />
                     </Grid>
-
-                </StackPanel>
+                </Grid>
 
             </Border>
 
@@ -662,82 +489,38 @@
                 PointerMoved="DesktopWidget_PointerMoved"
                 PointerReleased="DesktopWidget_PointerReleased"
                 PointerCanceled="DesktopWidget_PointerCanceled"
-                Width="202"
+                RightTapped="DesktopWidget_RightTapped"
+                Width="176"
                 Padding="16,14"
                 CornerRadius="16"
                 Background="#34111A27"
                 BorderBrush="#2D5DCBFF"
                 BorderThickness="1">
 
-                <StackPanel Spacing="10">
-
-                    <Grid>
-
-                        <TextBlock
-                            Text="VOIX &amp; ÉCOUTE"
-                            VerticalAlignment="Center"
-                            FontSize="9"
-                            CharacterSpacing="130"
-                            Foreground="#7CA8C2" />
-
-                        <FontIcon
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Glyph="&#xE720;"
-                            FontSize="13"
-                            Foreground="#77D9FF" />
-
+                <Grid x:Name="VoiceWidgetLayout" RowSpacing="9" ColumnSpacing="16">
+                    <Grid x:Name="VoiceHeaderSection">
+                        <TextBlock Text="VOIX &amp; ÉCOUTE" VerticalAlignment="Center" FontSize="9" CharacterSpacing="130" Foreground="#7CA8C2" />
+                        <FontIcon HorizontalAlignment="Right" VerticalAlignment="Center" Glyph="&#xE720;" FontSize="13" Foreground="#77D9FF" />
                     </Grid>
 
-                    <StackPanel
-                        Orientation="Horizontal"
-                        Spacing="8">
-
-                        <Ellipse
-                            x:Name="VoiceWidgetStateIndicator"
-                            Width="8"
-                            Height="8"
-                            VerticalAlignment="Center"
-                            Fill="#7A8593A0" />
-
-                        <TextBlock
-                            x:Name="VoiceWidgetStateText"
-                            Text="En attente du Core"
-                            FontSize="12"
-                            FontWeight="SemiBold"
-                            Foreground="#E7F5FF" />
-
+                    <StackPanel x:Name="VoiceStateSection" Orientation="Horizontal" Spacing="8">
+                        <Ellipse x:Name="VoiceWidgetStateIndicator" Width="8" Height="8" VerticalAlignment="Center" Fill="#7A8593A0" />
+                        <TextBlock x:Name="VoiceWidgetStateText" Text="En attente du Core" TextWrapping="Wrap" FontSize="12" FontWeight="SemiBold" Foreground="#E7F5FF" />
                     </StackPanel>
 
-                    <TextBlock
-                        x:Name="VoiceWidgetModeText"
-                        Text="Mode d’écoute indisponible"
-                        TextWrapping="Wrap"
-                        FontSize="10"
-                        Foreground="#91AABD" />
+                    <TextBlock x:Name="VoiceWidgetModeText" Text="Mode d’écoute indisponible" TextWrapping="Wrap" FontSize="10" Foreground="#91AABD" />
 
-                    <Border
-                        Height="1"
-                        Background="#22576F84" />
+                    <Border x:Name="VoiceDividerSection" Height="1" Background="#22576F84" />
 
-                    <Grid>
-
-                        <TextBlock
-                            Text="MOT DE RÉVEIL"
-                            FontSize="9"
-                            Foreground="#7899AD" />
-
-                        <TextBlock
-                            x:Name="VoiceWidgetWakeWordText"
-                            HorizontalAlignment="Right"
-                            Text="SIDERON"
-                            FontSize="10"
-                            FontWeight="SemiBold"
-                            Foreground="#DDEEFF" />
-
+                    <Grid x:Name="VoiceWakeWordSection" ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="MOT DE RÉVEIL" TextTrimming="CharacterEllipsis" FontSize="9" Foreground="#7899AD" />
+                        <TextBlock Grid.Column="1" x:Name="VoiceWidgetWakeWordText" HorizontalAlignment="Right" Text="SIDERON" TextTrimming="CharacterEllipsis" FontSize="10" FontWeight="SemiBold" Foreground="#DDEEFF" />
                     </Grid>
-
-                </StackPanel>
+                </Grid>
 
             </Border>
 
@@ -748,97 +531,91 @@
                 PointerMoved="DesktopWidget_PointerMoved"
                 PointerReleased="DesktopWidget_PointerReleased"
                 PointerCanceled="DesktopWidget_PointerCanceled"
-                Width="202"
+                RightTapped="DesktopWidget_RightTapped"
+                Width="176"
                 Padding="16,14"
                 CornerRadius="16"
                 Background="#34111A27"
                 BorderBrush="#2D5DCBFF"
                 BorderThickness="1">
 
-                <StackPanel Spacing="10">
-
-                    <Grid>
-
-                        <TextBlock
-                            Text="STOCKAGE SIDERON"
-                            VerticalAlignment="Center"
-                            FontSize="9"
-                            CharacterSpacing="130"
-                            Foreground="#7CA8C2" />
-
-                        <FontIcon
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Glyph="&#xEDA2;"
-                            FontSize="13"
-                            Foreground="#77D9FF" />
-
+                <Grid x:Name="StorageWidgetLayout" RowSpacing="9" ColumnSpacing="16">
+                    <Grid x:Name="StorageHeaderSection">
+                        <TextBlock Text="STOCKAGE SIDERON" VerticalAlignment="Center" FontSize="9" CharacterSpacing="130" Foreground="#7CA8C2" />
+                        <FontIcon HorizontalAlignment="Right" VerticalAlignment="Center" Glyph="&#xEDA2;" FontSize="13" Foreground="#77D9FF" />
                     </Grid>
 
-                    <TextBlock
-                        x:Name="StorageWidgetRootText"
-                        Text="C:\SIDERON"
-                        FontSize="13"
-                        FontWeight="SemiBold"
-                        TextTrimming="CharacterEllipsis"
-                        Foreground="#E7F5FF" />
+                    <TextBlock x:Name="StorageWidgetRootText" Text="C:\SIDERON" TextWrapping="Wrap" FontSize="13" FontWeight="SemiBold" Foreground="#E7F5FF" />
+                    <ProgressBar x:Name="StorageWidgetUsageBar" Style="{StaticResource SideronTelemetryProgressBarStyle}" Value="0" />
 
-                    <ProgressBar
-                        x:Name="StorageWidgetUsageBar"
-                        Style="{StaticResource SideronTelemetryProgressBarStyle}"
-                        Value="0" />
-
-                    <Grid>
-
-                        <TextBlock
-                            Text="UTILISÉ"
-                            FontSize="9"
-                            Foreground="#7899AD" />
-
-                        <TextBlock
-                            x:Name="StorageWidgetUsageText"
-                            HorizontalAlignment="Right"
-                            Text="--"
-                            FontSize="10"
-                            FontWeight="SemiBold"
-                            Foreground="#DDEEFF" />
-
+                    <Grid x:Name="StorageUsedSection" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="UTILISÉ" FontSize="9" Foreground="#7899AD" />
+                        <TextBlock Grid.Column="1" x:Name="StorageWidgetUsageText" HorizontalAlignment="Right" Text="--" TextTrimming="CharacterEllipsis" FontSize="10" FontWeight="SemiBold" Foreground="#DDEEFF" />
                     </Grid>
 
-                    <Grid>
-
-                        <TextBlock
-                            Text="LIBRE"
-                            FontSize="9"
-                            Foreground="#7899AD" />
-
-                        <TextBlock
-                            x:Name="StorageWidgetFreeText"
-                            HorizontalAlignment="Right"
-                            Text="--"
-                            FontSize="10"
-                            FontWeight="SemiBold"
-                            Foreground="#DDEEFF" />
-
+                    <Grid x:Name="StorageFreeSection" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="LIBRE" FontSize="9" Foreground="#7899AD" />
+                        <TextBlock Grid.Column="1" x:Name="StorageWidgetFreeText" HorizontalAlignment="Right" Text="--" TextTrimming="CharacterEllipsis" FontSize="10" FontWeight="SemiBold" Foreground="#DDEEFF" />
                     </Grid>
 
-                    <Grid>
+                    <Grid x:Name="StorageVolumeSection" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="VOLUME" FontSize="9" Foreground="#7899AD" />
+                        <TextBlock Grid.Column="1" x:Name="StorageWidgetVolumeText" HorizontalAlignment="Right" Text="--" TextTrimming="CharacterEllipsis" FontSize="10" Foreground="#A8C6D6" />
+                    </Grid>
+                </Grid>
 
-                        <TextBlock
-                            Text="VOLUME"
-                            FontSize="9"
-                            Foreground="#7899AD" />
+            </Border>
 
-                        <TextBlock
-                            x:Name="StorageWidgetVolumeText"
-                            HorizontalAlignment="Right"
-                            Text="--"
-                            FontSize="10"
-                            Foreground="#A8C6D6" />
+            <Border
+                x:Name="NetworkWidgetCard"
+                Tag="Network"
+                PointerPressed="DesktopWidget_PointerPressed"
+                PointerMoved="DesktopWidget_PointerMoved"
+                PointerReleased="DesktopWidget_PointerReleased"
+                PointerCanceled="DesktopWidget_PointerCanceled"
+                RightTapped="DesktopWidget_RightTapped"
+                Width="176"
+                Padding="16,14"
+                CornerRadius="16"
+                Background="#34111A27"
+                BorderBrush="#2D5DCBFF"
+                BorderThickness="1">
 
+                <Grid x:Name="NetworkWidgetLayout" RowSpacing="9" ColumnSpacing="16">
+                    <Grid x:Name="NetworkHeaderSection">
+                        <TextBlock Text="RÉSEAU" VerticalAlignment="Center" FontSize="9" CharacterSpacing="130" Foreground="#7CA8C2" />
+                        <FontIcon HorizontalAlignment="Right" VerticalAlignment="Center" Glyph="&#xE701;" FontSize="13" Foreground="#77D9FF" />
                     </Grid>
 
-                </StackPanel>
+                    <TextBlock x:Name="NetworkWidgetTypeText" Text="--" FontSize="13" FontWeight="SemiBold" Foreground="#E7F5FF" />
+                    <TextBlock x:Name="NetworkWidgetAdapterText" Text="--" TextWrapping="Wrap" FontSize="10" Foreground="#91AABD" />
+
+                    <Grid x:Name="NetworkRatesSection" ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="↓ RÉCEPTION" FontSize="9" Foreground="#7899AD" />
+                            <TextBlock x:Name="NetworkWidgetDownloadText" Text="--" FontSize="11" FontWeight="SemiBold" Foreground="#DDEEFF" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="3">
+                            <TextBlock Text="↑ ENVOI" FontSize="9" Foreground="#7899AD" />
+                            <TextBlock x:Name="NetworkWidgetUploadText" Text="--" FontSize="11" FontWeight="SemiBold" Foreground="#DDEEFF" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Border x:Name="NetworkDividerSection" Height="1" Background="#22576F84" />
+
+                    <Grid x:Name="NetworkIpv4Section" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="IPv4" FontSize="9" Foreground="#7899AD" />
+                        <TextBlock Grid.Column="1" x:Name="NetworkWidgetIpv4Text" HorizontalAlignment="Right" Text="--" TextTrimming="CharacterEllipsis" FontSize="10" Foreground="#A8C6D6" />
+                    </Grid>
+                </Grid>
 
             </Border>
 
@@ -863,13 +640,16 @@
             MinWidth="660"
             MinHeight="440"
             PointerPressed="FloatingPanel_PointerPressed"
-            DoubleTapped="FloatingPanel_DoubleTapped">
+            DoubleTapped="FloatingPanel_DoubleTapped"
+            SizeChanged="WidgetManagerPanel_SizeChanged">
 
             <Grid>
 
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="22" />
+                    <RowDefinition Height="16" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="12" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
@@ -890,7 +670,7 @@
                             Foreground="#F1FAFF" />
 
                         <TextBlock
-                            Text="Choisis les informations visibles directement sur le bureau."
+                            Text="Glisse un widget sur le bureau SIDERON pour l’ajouter ou le repositionner."
                             FontSize="11"
                             Foreground="#9294A4" />
 
@@ -930,221 +710,15 @@
 
                 </Grid>
 
-                <ScrollViewer
+                <Border
                     Grid.Row="2"
-                    VerticalScrollBarVisibility="Auto"
-                    HorizontalScrollBarVisibility="Disabled">
-
-                    <StackPanel Spacing="16">
-
-                        <Border
-                            Padding="20"
+                            Padding="16"
                             CornerRadius="8"
                             Background="{StaticResource SideronWindowCardBrush}"
                             BorderBrush="{StaticResource SideronWindowInnerBorderBrush}"
                             BorderThickness="1">
 
-                            <StackPanel Spacing="14">
-
-                                <TextBlock
-                                    Text="WIDGETS ACTIFS"
-                                    FontSize="9"
-                                    CharacterSpacing="140"
-                                    Foreground="#729FB7" />
-
-                                <Grid ColumnSpacing="16">
-
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Spacing="4">
-
-                                        <TextBlock
-                                            Text="Sideron Core"
-                                            FontSize="15"
-                                            FontWeight="SemiBold"
-                                            Foreground="#EEF7FC" />
-
-                                        <TextBlock
-                                            Text="Affiche l’état de connexion du Core en permanence."
-                                            TextWrapping="Wrap"
-                                            FontSize="10"
-                                            Foreground="#91AABD" />
-
-                                    </StackPanel>
-
-                                    <ToggleSwitch
-                                        x:Name="WidgetCoreToggle"
-                                        Grid.Column="1"
-                                        IsOn="True"
-                                        OnContent="Visible"
-                                        OffContent="Masqué"
-                                        Toggled="WidgetCoreToggle_Toggled" />
-
-                                </Grid>
-
-                                <Border
-                                    Height="1"
-                                    Background="#22576F84" />
-
-                                <Grid ColumnSpacing="16">
-
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Spacing="4">
-
-                                        <TextBlock
-                                            Text="Système"
-                                            FontSize="15"
-                                            FontWeight="SemiBold"
-                                            Foreground="#EEF7FC" />
-
-                                        <TextBlock
-                                            Text="CPU, RAM, stockage, uptime et état réseau."
-                                            TextWrapping="Wrap"
-                                            FontSize="10"
-                                            Foreground="#91AABD" />
-
-                                    </StackPanel>
-
-                                    <ToggleSwitch
-                                        x:Name="WidgetSystemToggle"
-                                        Grid.Column="1"
-                                        IsOn="True"
-                                        OnContent="Visible"
-                                        OffContent="Masqué"
-                                        Toggled="WidgetSystemToggle_Toggled" />
-
-                                </Grid>
-
-                                <Border
-                                    Height="1"
-                                    Background="#22576F84" />
-
-                                <Grid ColumnSpacing="16">
-
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Spacing="4">
-
-                                        <TextBlock
-                                            Text="Voix &amp; écoute"
-                                            FontSize="15"
-                                            FontWeight="SemiBold"
-                                            Foreground="#EEF7FC" />
-
-                                        <TextBlock
-                                            Text="Mode d’écoute, mot de réveil et état de la session vocale."
-                                            TextWrapping="Wrap"
-                                            FontSize="10"
-                                            Foreground="#91AABD" />
-
-                                    </StackPanel>
-
-                                    <ToggleSwitch
-                                        x:Name="WidgetVoiceToggle"
-                                        Grid.Column="1"
-                                        IsOn="True"
-                                        OnContent="Visible"
-                                        OffContent="Masqué"
-                                        Toggled="WidgetVoiceToggle_Toggled" />
-
-                                </Grid>
-
-                                <Border
-                                    Height="1"
-                                    Background="#22576F84" />
-
-                                <Grid ColumnSpacing="16">
-
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Spacing="4">
-
-                                        <TextBlock
-                                            Text="Stockage Sideron"
-                                            FontSize="15"
-                                            FontWeight="SemiBold"
-                                            Foreground="#EEF7FC" />
-
-                                        <TextBlock
-                                            Text="Espace utilisé et disponible sur le volume de stockage Sideron."
-                                            TextWrapping="Wrap"
-                                            FontSize="10"
-                                            Foreground="#91AABD" />
-
-                                    </StackPanel>
-
-                                    <ToggleSwitch
-                                        x:Name="WidgetStorageToggle"
-                                        Grid.Column="1"
-                                        IsOn="True"
-                                        OnContent="Visible"
-                                        OffContent="Masqué"
-                                        Toggled="WidgetStorageToggle_Toggled" />
-
-                                </Grid>
-
-                                <Border
-                                    Height="1"
-                                    Background="#22576F84" />
-
-                                <Grid ColumnSpacing="16">
-
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Spacing="4">
-
-                                        <TextBlock
-                                            Text="Réseau"
-                                            FontSize="15"
-                                            FontWeight="SemiBold"
-                                            Foreground="#EEF7FC" />
-
-                                        <TextBlock
-                                            Text="Connexion active, débits instantanés et adresse IPv4."
-                                            TextWrapping="Wrap"
-                                            FontSize="10"
-                                            Foreground="#91AABD" />
-
-                                    </StackPanel>
-
-                                    <ToggleSwitch
-                                        x:Name="WidgetNetworkToggle"
-                                        Grid.Column="1"
-                                        IsOn="True"
-                                        OnContent="Visible"
-                                        OffContent="Masqué"
-                                        Toggled="WidgetNetworkToggle_Toggled" />
-
-                                </Grid>
-
-                            </StackPanel>
-
-                        </Border>
-
-                        <Border
-                            Padding="20"
-                            CornerRadius="8"
-                            Background="{StaticResource SideronWindowCardBrush}"
-                            BorderBrush="{StaticResource SideronWindowInnerBorderBrush}"
-                            BorderThickness="1">
-
-                            <StackPanel Spacing="14">
+                            <StackPanel Spacing="10">
 
                                 <TextBlock
                                     Text="DISPOSITION"
@@ -1159,7 +733,7 @@
                                     Foreground="#EEF7FC" />
 
                                 <TextBlock
-                                    Text="Glisse chaque widget directement sur le bureau. Ces deux boutons permettent de les ranger rapidement."
+                                    Text="Déplace les widgets librement ou range-les rapidement."
                                     TextWrapping="Wrap"
                                     FontSize="10"
                                     Foreground="#91AABD" />
@@ -1180,7 +754,7 @@
                                             Foreground="#EEF7FC" />
 
                                         <TextBlock
-                                            Text="Déverrouille pour déplacer les widgets. Une fois verrouillés, les clics restent entièrement disponibles."
+                                            Text="Déverrouille pour déplacer les widgets sur le bureau."
                                             TextWrapping="Wrap"
                                             FontSize="10"
                                             Foreground="#91AABD" />
@@ -1303,35 +877,229 @@
 
                         </Border>
 
+
+                <ScrollViewer
+                    Grid.Row="4"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled">
+
+                    <StackPanel Spacing="10">
+
                         <Border
-                            Padding="18"
+                            Padding="14"
                             CornerRadius="8"
-                            Background="#181B2634"
-                            BorderBrush="#295A7E98"
+                            Background="{StaticResource SideronWindowCardBrush}"
+                            BorderBrush="{StaticResource SideronWindowInnerBorderBrush}"
                             BorderThickness="1">
 
-                            <Grid ColumnSpacing="12">
+                            <StackPanel Spacing="10">
 
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                                <Grid>
+                                    <StackPanel Spacing="3">
+                                        <TextBlock
+                                            Text="BIBLIOTHÈQUE DE WIDGETS"
+                                            FontSize="9"
+                                            CharacterSpacing="140"
+                                            Foreground="#729FB7" />
+                                        <TextBlock
+                                            Text="Chaque aperçu utilise le format Petit. Glisse-le sur le bureau, puis fais un clic droit sur le widget placé pour choisir Petit, Moyen ou Grand."
+                                            TextWrapping="Wrap"
+                                            FontSize="10"
+                                            Foreground="#91AABD" />
+                                    </StackPanel>
+                                </Grid>
 
-                                <FontIcon
-                                    Glyph="&#xE946;"
-                                    FontSize="16"
-                                    Foreground="#72CFF5" />
+                                <Grid
+                                    x:Name="WidgetLibraryGrid"
+                                    ColumnSpacing="10"
+                                    RowSpacing="10"
+                                    HorizontalAlignment="Stretch"
+                                    SizeChanged="WidgetLibraryGrid_SizeChanged">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="220" />
+                                        <ColumnDefinition Width="220" />
+                                        <ColumnDefinition Width="220" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
 
-                                <TextBlock
-                                    Grid.Column="1"
-                                    Text="Cette première version gère les widgets natifs déjà présents. Les prochains widgets seront ajoutés ici sans alourdir le dock."
-                                    TextWrapping="Wrap"
-                                    FontSize="10"
-                                    Foreground="#A9BFCE" />
+                                    <!-- CORE -->
+                                    <Border
+                                        Grid.Row="0"
+                                        Grid.Column="0"
+                                        Tag="Core"
+                                        Width="220"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        PointerPressed="WidgetPreview_PointerPressed"
+                                        PointerMoved="WidgetPreview_PointerMoved"
+                                        PointerReleased="WidgetPreview_PointerReleased"
+                                        PointerCanceled="WidgetPreview_PointerCanceled"
+                                        Padding="10"
+                                        CornerRadius="10"
+                                        Background="#20141E2B"
+                                        BorderBrush="#315D86A5"
+                                        BorderThickness="1">
+                                        <StackPanel Spacing="6">
+                                            <Grid>
+                                                <TextBlock Text="Sideron Core" FontSize="13" FontWeight="SemiBold" Foreground="#EEF7FC" />
+                                                <TextBlock x:Name="WidgetCorePreviewState" HorizontalAlignment="Right" Text="Disponible" FontSize="9" Foreground="#72CFF5" />
+                                            </Grid>
+                                            <Border Width="176" HorizontalAlignment="Center" Padding="9" CornerRadius="12" Background="#34111A27" BorderBrush="#355DCBFF" BorderThickness="1">
+                                                <StackPanel Spacing="7">
+                                                    <TextBlock Text="SIDERON" FontSize="8" CharacterSpacing="150" Foreground="#7CA8C2" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                                        <Ellipse Width="7" Height="7" Fill="#68E2A3" />
+                                                        <TextBlock Text="Core connecté · prêt" FontSize="10" FontWeight="SemiBold" Foreground="#E7F5FF" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+                                            <TextBlock x:Name="WidgetCoreSizeState" Visibility="Collapsed" Text="Taille : Petit" />
+                                        </StackPanel>
+                                    </Border>
 
-                            </Grid>
+                                    <!-- SYSTEME -->
+                                    <Border
+                                        Grid.Row="0"
+                                        Grid.Column="1"
+                                        Tag="System"
+                                        Width="220"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        PointerPressed="WidgetPreview_PointerPressed"
+                                        PointerMoved="WidgetPreview_PointerMoved"
+                                        PointerReleased="WidgetPreview_PointerReleased"
+                                        PointerCanceled="WidgetPreview_PointerCanceled"
+                                        Padding="10"
+                                        CornerRadius="10"
+                                        Background="#20141E2B"
+                                        BorderBrush="#315D86A5"
+                                        BorderThickness="1">
+                                        <StackPanel Spacing="6">
+                                            <Grid>
+                                                <TextBlock Text="Système" FontSize="13" FontWeight="SemiBold" Foreground="#EEF7FC" />
+                                                <TextBlock x:Name="WidgetSystemPreviewState" HorizontalAlignment="Right" Text="Disponible" FontSize="9" Foreground="#72CFF5" />
+                                            </Grid>
+                                            <Border Width="176" HorizontalAlignment="Center" Padding="9" CornerRadius="12" Background="#34111A27" BorderBrush="#2D5DCBFF" BorderThickness="1">
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <StackPanel Spacing="5"><TextBlock Text="CPU" FontSize="8" Foreground="#7899AD" /><TextBlock Text="18 %" FontSize="13" FontWeight="SemiBold" Foreground="#E7F5FF" /><ProgressBar Value="18" Height="3" /></StackPanel>
+                                                    <StackPanel Grid.Column="1" Spacing="5"><TextBlock Text="RAM" FontSize="8" Foreground="#7899AD" /><TextBlock Text="42 %" FontSize="13" FontWeight="SemiBold" Foreground="#E7F5FF" /><ProgressBar Value="42" Height="3" /></StackPanel>
+                                                </Grid>
+                                            </Border>
+                                            <TextBlock x:Name="WidgetSystemSizeState" Visibility="Collapsed" Text="Taille : Petit" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- VOIX -->
+                                    <Border
+                                        Grid.Row="0"
+                                        Grid.Column="2"
+                                        Tag="Voice"
+                                        Width="220"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        PointerPressed="WidgetPreview_PointerPressed"
+                                        PointerMoved="WidgetPreview_PointerMoved"
+                                        PointerReleased="WidgetPreview_PointerReleased"
+                                        PointerCanceled="WidgetPreview_PointerCanceled"
+                                        Padding="10"
+                                        CornerRadius="10"
+                                        Background="#20141E2B"
+                                        BorderBrush="#315D86A5"
+                                        BorderThickness="1">
+                                        <StackPanel Spacing="6">
+                                            <Grid>
+                                                <TextBlock Text="Voix &amp; écoute" FontSize="13" FontWeight="SemiBold" Foreground="#EEF7FC" />
+                                                <TextBlock x:Name="WidgetVoicePreviewState" HorizontalAlignment="Right" Text="Disponible" FontSize="9" Foreground="#72CFF5" />
+                                            </Grid>
+                                            <Border Width="176" HorizontalAlignment="Center" Padding="9" CornerRadius="12" Background="#34111A27" BorderBrush="#2D5DCBFF" BorderThickness="1">
+                                                <StackPanel Spacing="7">
+                                                    <TextBlock Text="VOIX &amp; ÉCOUTE" FontSize="8" CharacterSpacing="100" Foreground="#7CA8C2" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="7"><Ellipse Width="7" Height="7" Fill="#68E2A3" /><TextBlock Text="En attente de « SIDERON »" FontSize="10" Foreground="#E7F5FF" /></StackPanel>
+                                                </StackPanel>
+                                            </Border>
+                                            <TextBlock x:Name="WidgetVoiceSizeState" Visibility="Collapsed" Text="Taille : Petit" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- STOCKAGE -->
+                                    <Border
+                                        Grid.Row="1"
+                                        Grid.Column="0"
+                                        Tag="Storage"
+                                        Width="220"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        PointerPressed="WidgetPreview_PointerPressed"
+                                        PointerMoved="WidgetPreview_PointerMoved"
+                                        PointerReleased="WidgetPreview_PointerReleased"
+                                        PointerCanceled="WidgetPreview_PointerCanceled"
+                                        Padding="10"
+                                        CornerRadius="10"
+                                        Background="#20141E2B"
+                                        BorderBrush="#315D86A5"
+                                        BorderThickness="1">
+                                        <StackPanel Spacing="6">
+                                            <Grid>
+                                                <TextBlock Text="Stockage SIDERON" FontSize="13" FontWeight="SemiBold" Foreground="#EEF7FC" />
+                                                <TextBlock x:Name="WidgetStoragePreviewState" HorizontalAlignment="Right" Text="Disponible" FontSize="9" Foreground="#72CFF5" />
+                                            </Grid>
+                                            <Border Width="176" HorizontalAlignment="Center" Padding="9" CornerRadius="12" Background="#34111A27" BorderBrush="#2D5DCBFF" BorderThickness="1">
+                                                <StackPanel Spacing="6"><TextBlock Text="C:\SIDERON" FontSize="10" FontWeight="SemiBold" Foreground="#E7F5FF" /><ProgressBar Value="64" Height="4" /><Grid><TextBlock Text="UTILISÉ" FontSize="8" Foreground="#7899AD" /><TextBlock HorizontalAlignment="Right" Text="64 %" FontSize="9" Foreground="#DDEEFF" /></Grid></StackPanel>
+                                            </Border>
+                                            <TextBlock x:Name="WidgetStorageSizeState" Visibility="Collapsed" Text="Taille : Petit" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- RESEAU -->
+                                    <Border
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        Tag="Network"
+                                        Width="220"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        PointerPressed="WidgetPreview_PointerPressed"
+                                        PointerMoved="WidgetPreview_PointerMoved"
+                                        PointerReleased="WidgetPreview_PointerReleased"
+                                        PointerCanceled="WidgetPreview_PointerCanceled"
+                                        Padding="10"
+                                        CornerRadius="10"
+                                        Background="#20141E2B"
+                                        BorderBrush="#315D86A5"
+                                        BorderThickness="1">
+                                        <StackPanel Spacing="6">
+                                            <Grid>
+                                                <TextBlock Text="Réseau" FontSize="13" FontWeight="SemiBold" Foreground="#EEF7FC" />
+                                                <TextBlock x:Name="WidgetNetworkPreviewState" HorizontalAlignment="Right" Text="Disponible" FontSize="9" Foreground="#72CFF5" />
+                                            </Grid>
+                                            <Border Width="176" HorizontalAlignment="Center" Padding="9" CornerRadius="12" Background="#34111A27" BorderBrush="#2D5DCBFF" BorderThickness="1">
+                                                <StackPanel Spacing="7">
+                                                    <Grid>
+                                                        <TextBlock Text="RÉSEAU" FontSize="8" CharacterSpacing="120" Foreground="#7899AD" />
+                                                        <TextBlock HorizontalAlignment="Right" Text="Ethernet" FontSize="9" Foreground="#E7F5FF" />
+                                                    </Grid>
+                                                    <Grid ColumnSpacing="8">
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                        <StackPanel Spacing="2"><TextBlock Text="↓ RÉCEPTION" FontSize="8" Foreground="#7899AD" /><TextBlock Text="—" FontSize="10" Foreground="#E7F5FF" /></StackPanel>
+                                                        <StackPanel Grid.Column="1" Spacing="2"><TextBlock Text="↑ ENVOI" FontSize="8" Foreground="#7899AD" /><TextBlock Text="—" FontSize="10" Foreground="#E7F5FF" /></StackPanel>
+                                                    </Grid>
+                                                    <Grid><TextBlock Text="IPv4" FontSize="8" Foreground="#7899AD" /><TextBlock HorizontalAlignment="Right" Text="192.168.x.x" FontSize="9" Foreground="#A8C6D6" /></Grid>
+                                                </StackPanel>
+                                            </Border>
+                                            <TextBlock x:Name="WidgetNetworkSizeState" Visibility="Collapsed" Text="Taille : Petit" />
+                                        </StackPanel>
+                                    </Border>
+
+                                </Grid>
+
+                            </StackPanel>
 
                         </Border>
+
 
                     </StackPanel>
 
@@ -2052,7 +1820,7 @@
                                             x:Name="HomeVersionText"
                                             Grid.Column="1"
                                             VerticalAlignment="Center"
-                                            Text="Sideron 3.3.6"
+                                            Text="Sideron 3.3.6-rc.1"
                                             FontSize="13"
                                             FontWeight="SemiBold"
                                             Foreground="#D7EAF5" />
@@ -2314,7 +2082,7 @@
                                 </Border>
 
                                 <TextBlock
-                                    Text="Le changement d’écran est appliqué après Enregistrer. Sideron repositionne ensuite son bureau sur le moniteur choisi."
+                                    Text="Le changement d’écran est enregistré et appliqué automatiquement. Sideron repositionne immédiatement son bureau sur le moniteur choisi."
                                     TextWrapping="Wrap"
                                     FontSize="11"
                                     Foreground="#737687" />
@@ -3414,7 +3182,7 @@
                                             Foreground="#8F92A4" />
 
                                         <TextBlock
-                                            Text="Les modifications de fichiers restent confinées à la racine Sideron sélectionnée. Le changement de racine est appliqué après Enregistrer et peut nécessiter un redémarrage d’Sideron."
+                                            Text="Les modifications de fichiers restent confinées à la racine Sideron définie lors de l’installation. Cette racine n’est pas modifiée depuis les Paramètres."
                                             TextWrapping="Wrap"
                                             FontSize="11"
                                             Foreground="#9294A4" />
@@ -3554,7 +3322,7 @@
                                 </Border>
 
                                 <TextBlock
-                                    Text="Les changements de l’interrupteur sont appliqués lorsque vous cliquez sur Enregistrer."
+                                    Text="Le changement est enregistré et appliqué automatiquement à Windows."
                                     TextWrapping="Wrap"
                                     FontSize="11"
                                     Foreground="#737687" />
@@ -4047,7 +3815,7 @@
                                             x:Name="UpdateCurrentVersionText"
                                             Grid.Row="0"
                                             Grid.Column="1"
-                                            Text="3.3.6"
+                                            Text="3.3.6-rc.1"
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Foreground="#ECECF2" />
@@ -4213,7 +3981,7 @@
                                     <StackPanel Spacing="10">
 
                                         <TextBlock
-                                            Text="À propos d’Sideron"
+                                            Text="À propos de SIDERON"
                                             FontSize="24"
                                             FontWeight="SemiBold"
                                             Foreground="#F1F1F5" />
@@ -4252,14 +4020,14 @@
 
                                             <TextBlock
                                                 x:Name="AboutVersionText"
-                                                Text="Sideron 3.3.6"
+                                                Text="Sideron 3.3.6-rc.1"
                                                 FontSize="24"
                                                 FontWeight="SemiBold"
                                                 Foreground="#F1F1F5" />
 
                                             <TextBlock
                                                 x:Name="AboutChannelText"
-                                                Text="Canal Release"
+                                                Text="Canal Experimental"
                                                 FontSize="11"
                                                 Foreground="#9294A4" />
 
@@ -4427,35 +4195,7 @@
                         FontSize="11"
                         Foreground="#9FD8FF" />
 
-                    <StackPanel
-                        Grid.Row="6"
-                        HorizontalAlignment="Right"
-                        Orientation="Horizontal"
-                        Spacing="10">
 
-                        <Button
-                            Padding="22,10"
-                            Background="Transparent"
-                            BorderBrush="#365D7B91"
-                            BorderThickness="1"
-                            CornerRadius="7"
-                            Click="CloseSettingsPanel_Click">
-                            <TextBlock Text="Annuler" Foreground="#ECECF2" />
-                        </Button>
-
-                        <Button
-                            x:Name="SettingsSaveButton"
-                            Padding="22,10"
-                            Background="{StaticResource SideronWindowControlBrush}"
-                            BorderBrush="#5D9AD8FF"
-                            BorderThickness="1"
-                            CornerRadius="7"
-                            IsEnabled="False"
-                            Click="SaveSettings_Click">
-                            <TextBlock Text="Enregistrer" Foreground="#F5FBFF" />
-                        </Button>
-
-                    </StackPanel>
 
                 </Grid>
 
@@ -5186,32 +4926,33 @@
                                             Width="42"
                                             Height="42">
 
-                                            <Ellipse
+                                            <Border
                                                 Width="38"
                                                 Height="38"
-                                                Stroke="#3565B6E7"
-                                                StrokeThickness="1" />
+                                                Background="#12192736"
+                                                BorderBrush="#2B5D99BF"
+                                                BorderThickness="1"
+                                                CornerRadius="14" />
 
-                                            <Ellipse
-                                                Width="30"
-                                                Height="30"
-                                                Stroke="#7958D9FF"
-                                                StrokeThickness="1.4" />
-
-                                            <Ellipse
-                                                Width="23"
-                                                Height="23"
-                                                Fill="#35143145"
-                                                Stroke="#3D69D6FF"
-                                                StrokeThickness="1" />
-
-                                            <TextBlock
+                                            <Image
+                                                x:Name="CoreDockFlyoutLogoColor"
+                                                Width="31"
+                                                Height="31"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
-                                                Text="A"
-                                                FontSize="15"
-                                                FontWeight="SemiBold"
-                                                Foreground="#78DEFF" />
+                                                Source="ms-appx:///Assets/sideron-icon-dock.png"
+                                                Stretch="Uniform"
+                                                Visibility="Collapsed" />
+
+                                            <Image
+                                                x:Name="CoreDockFlyoutLogoMono"
+                                                Width="31"
+                                                Height="31"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Source="ms-appx:///Assets/sideron-icon-dock-mono.png"
+                                                Stretch="Uniform"
+                                                Visibility="Visible" />
 
                                         </Grid>
 
@@ -5358,43 +5099,33 @@
 
                     <Grid>
 
-                        <!-- halo sombre -->
-                        <Ellipse
+                        <Border
                             Width="36"
                             Height="36"
-                            Fill="#151A2A3B"
-                            Stroke="#285D99BF"
-                            StrokeThickness="1" />
+                            Background="#12192736"
+                            BorderBrush="#2B5D99BF"
+                            BorderThickness="1"
+                            CornerRadius="13" />
 
-                        <!-- anneau externe -->
-                        <Ellipse
-                            Width="31"
-                            Height="31"
-                            Stroke="#4F5FCDF3"
-                            StrokeThickness="1.2" />
-
-                        <!-- anneau lumineux -->
-                        <Ellipse
-                            Width="25"
-                            Height="25"
-                            Stroke="#8858DCFF"
-                            StrokeThickness="1.4" />
-
-                        <!-- noyau -->
-                        <Ellipse
-                            Width="20"
-                            Height="20"
-                            Fill="#40102B3C"
-                            Stroke="#356AD7FF"
-                            StrokeThickness="1" />
-
-                        <TextBlock
+                        <Image
+                            x:Name="CoreDockLogoColor"
+                            Width="29"
+                            Height="29"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            Text="A"
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            Foreground="#7DE1FF" />
+                            Source="ms-appx:///Assets/sideron-icon-dock.png"
+                            Stretch="Uniform"
+                            Visibility="Collapsed" />
+
+                        <Image
+                            x:Name="CoreDockLogoMono"
+                            Width="29"
+                            Height="29"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Source="ms-appx:///Assets/sideron-icon-dock-mono.png"
+                            Stretch="Uniform"
+                            Visibility="Visible" />
 
                         <!-- état Core -->
                         <Ellipse
@@ -5470,10 +5201,57 @@
 
                         <Grid>
 
-                            <FontIcon
-                                Glyph="&#xE80F;"
-                                FontSize="18"
-                                Foreground="#EAF7FF" />
+                            <Grid
+                                Width="18"
+                                Height="18"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                RowSpacing="2"
+                                ColumnSpacing="2">
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    CornerRadius="2"
+                                    BorderThickness="1.2"
+                                    BorderBrush="#EAF7FF"
+                                    Background="#123B566F" />
+
+                                <Border
+                                    Grid.Row="0"
+                                    Grid.Column="1"
+                                    CornerRadius="2"
+                                    BorderThickness="1.2"
+                                    BorderBrush="#EAF7FF"
+                                    Background="#123B566F" />
+
+                                <Border
+                                    Grid.Row="1"
+                                    Grid.Column="0"
+                                    CornerRadius="2"
+                                    BorderThickness="1.2"
+                                    BorderBrush="#EAF7FF"
+                                    Background="#123B566F" />
+
+                                <Border
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    CornerRadius="2"
+                                    BorderThickness="1.2"
+                                    BorderBrush="#EAF7FF"
+                                    Background="#123B566F" />
+
+                            </Grid>
 
                             <Ellipse
                                 x:Name="DockWidgetsStateDot"
@@ -5607,6 +5385,24 @@
 
             </Grid>
 
+        </Border>
+
+        <Border
+            x:Name="WidgetLibraryDragGhost"
+            Canvas.ZIndex="10000"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            IsHitTestVisible="False"
+            Visibility="Collapsed"
+            Padding="12,8"
+            CornerRadius="10"
+            Background="#E8172230"
+            BorderBrush="#775DCBFF"
+            BorderThickness="1">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <FontIcon Glyph="&#xE74A;" FontSize="12" Foreground="#72D7FF" />
+                <TextBlock x:Name="WidgetLibraryDragGhostText" Text="Widget" FontSize="11" FontWeight="SemiBold" Foreground="#EEF8FF" />
+            </StackPanel>
         </Border>
 
     </Grid>

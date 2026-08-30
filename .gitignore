@@ -27,9 +27,8 @@ config/secrets.json
 .sideron-version-backups/
 .atlas-version-backups/
 
-# Private relay access: never publish generated activations or server secrets.
-Activer-*.ps1
+# Private relay access: never publish local credentials or server secrets.
 access.bin
 sideron-api.env
-atlas-api.env
+sideron-api.env
 access.sqlite3*

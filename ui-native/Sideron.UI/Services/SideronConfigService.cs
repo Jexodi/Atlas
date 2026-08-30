@@ -104,6 +104,26 @@ public sealed class SideronConfigService
                     "network_visible")
                 ?? true;
 
+            var widgetCoreSize =
+                ReadString(root, "ui", "widgets", "core_size")
+                ?? "small";
+
+            var widgetSystemSize =
+                ReadString(root, "ui", "widgets", "system_size")
+                ?? "small";
+
+            var widgetVoiceSize =
+                ReadString(root, "ui", "widgets", "voice_size")
+                ?? "small";
+
+            var widgetStorageSize =
+                ReadString(root, "ui", "widgets", "storage_size")
+                ?? "small";
+
+            var widgetNetworkSize =
+                ReadString(root, "ui", "widgets", "network_size")
+                ?? "small";
+
             var widgetsAlignment =
                 ReadString(
                     root,
@@ -260,6 +280,12 @@ public sealed class SideronConfigService
 
                 WidgetNetworkVisible =
                     widgetNetworkVisible,
+
+                WidgetCoreSize = widgetCoreSize,
+                WidgetSystemSize = widgetSystemSize,
+                WidgetVoiceSize = widgetVoiceSize,
+                WidgetStorageSize = widgetStorageSize,
+                WidgetNetworkSize = widgetNetworkSize,
 
                 WidgetsAlignment =
                     widgetsAlignment,
@@ -663,6 +689,12 @@ public sealed class SideronConfigService
         widgets[
             "network_visible"
         ] = config.WidgetNetworkVisible;
+
+        widgets["core_size"] = config.WidgetCoreSize;
+        widgets["system_size"] = config.WidgetSystemSize;
+        widgets["voice_size"] = config.WidgetVoiceSize;
+        widgets["storage_size"] = config.WidgetStorageSize;
+        widgets["network_size"] = config.WidgetNetworkSize;
 
         widgets[
             "alignment"

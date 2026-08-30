@@ -188,7 +188,7 @@ public sealed class SideronIpcServerService
                     {
                         type = "hello",
                         source = "ui",
-                        version = "3.3.6",
+                        version = "3.3.6-rc.1",
                     });
 
                 while (

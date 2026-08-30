@@ -65,12 +65,14 @@ $InstallerMutexName = "Global\SIDERON.Setup.Installation"
 $InstallerMutex = $null
 $InstallerMutexOwned = $false
 
-$SideronVersion = "3.3.6"
+$SideronVersion = "3.3.6-rc.1"
 $SideronPublisher = "SIDERON"
 $UninstallKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\SIDERON"
 $UninstallExeInstalled = Join-Path $InstallRoot "SIDERON.Uninstall.exe"
 
 $InstalledConfigPath = Join-Path $InstallRoot "config\sideron.json"
+$SideronApiBaseUrl = "https://atlasbot.freeboxos.fr/sideron-api/"
+$SideronAccessPath = Join-Path $env:LOCALAPPDATA "SIDERON\auth\access.bin"
 $LocalAppDataRoot = [Environment]::GetFolderPath(
     [Environment+SpecialFolder]::LocalApplicationData
 )
@@ -82,6 +84,69 @@ $PreservedConfigPath = Join-Path $InstallBackupRoot "sideron.previous.json"
 $RollbackInstallRoot = Join-Path `
     (Split-Path $InstallRoot -Parent) `
     "SIDERON.__rollback"
+
+
+function Ensure-SideronApiAccess
+{
+    [CmdletBinding()]
+    param()
+
+    if (Test-Path $SideronAccessPath)
+    {
+        Write-Host "Accès OpenAI SIDERON déjà configuré pour cet utilisateur." -ForegroundColor DarkGray
+        return
+    }
+
+    Write-Host "Configuration de l'accès OpenAI SIDERON..." -ForegroundColor Cyan
+    Add-Type -AssemblyName System.Security
+
+    $RegisterUri = $SideronApiBaseUrl.TrimEnd('/') + "/v1/install/register"
+    $Payload = @{
+        install_id = [Guid]::NewGuid().ToString("D")
+        version = $SideronVersion
+    } | ConvertTo-Json -Compress
+
+    $Response = $null
+    $LastError = $null
+    for ($Attempt = 1; $Attempt -le 3; $Attempt++)
+    {
+        try
+        {
+            $Response = Invoke-RestMethod -Uri $RegisterUri -Method Post -ContentType "application/json; charset=utf-8" -Body $Payload -TimeoutSec 20 -ErrorAction Stop
+            if ($null -eq $Response -or [string]::IsNullOrWhiteSpace([string]$Response.access_token) -or -not ([string]$Response.access_token).StartsWith("sideron_"))
+            {
+                throw "Le relais SIDERON a renvoyé une réponse d'inscription invalide."
+            }
+            break
+        }
+        catch
+        {
+            $LastError = $_.Exception.Message
+            $Response = $null
+            if ($Attempt -lt 3) { Start-Sleep -Seconds 2 }
+        }
+    }
+
+    if ($null -eq $Response)
+    {
+        throw "Impossible de configurer l'accès OpenAI SIDERON pendant l'installation : $LastError"
+    }
+
+    $AccessBytes = [Text.Encoding]::ASCII.GetBytes([string]$Response.access_token)
+    try
+    {
+        $Protected = [Security.Cryptography.ProtectedData]::Protect($AccessBytes, $null, [Security.Cryptography.DataProtectionScope]::CurrentUser)
+        $AccessDirectory = Split-Path -Path $SideronAccessPath -Parent
+        [IO.Directory]::CreateDirectory($AccessDirectory) | Out-Null
+        [IO.File]::WriteAllBytes($SideronAccessPath, $Protected)
+    }
+    finally
+    {
+        if ($null -ne $AccessBytes) { [Array]::Clear($AccessBytes, 0, $AccessBytes.Length) }
+    }
+
+    Write-Host "Accès OpenAI SIDERON configuré automatiquement." -ForegroundColor Green
+}
 
 function Test-Administrator
 {
@@ -1312,7 +1377,7 @@ function Repair-PreviousInstallationWithoutRollback
     )
 
     Write-Host ""
-    Write-Host "Réactivation de l'installation Sideron existante..." -ForegroundColor Yellow
+    Write-Host "Restauration de l'installation Sideron existante..." -ForegroundColor Yellow
 
     if (-not (Test-Path $InstallRoot))
     {
@@ -2149,7 +2214,7 @@ Write-UpdateProgress `
     -Message "Initialisation d’Sideron..."
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host " Installation Sideron 3.3.6" -ForegroundColor Cyan
+Write-Host " Installation Sideron 3.3.6-rc.1" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -2323,6 +2388,12 @@ try
 
         Sync-RuntimeConfiguration
 
+        Write-UpdateProgress `
+            -Percent 94 `
+            -Message "Configuration de l'accès OpenAI SIDERON..."
+
+        Ensure-SideronApiAccess
+
         # La suppression de l'ancienne application n'intervient qu'après la
         # validation complète de SIDERON. C:\Atlas reste intact lorsqu'il est
         # utilisé comme zone de données.
@@ -2411,12 +2482,12 @@ try
 
                 Write-UpdateProgress `
                     -Percent 0 `
-                    -Message "La mise à jour et la réactivation d'Sideron ont échoué : $RecoveryError" `
+                    -Message "La mise à jour et la restauration d'Sideron ont échoué : $RecoveryError" `
                     -State "failed"
 
                 throw (
                     "L'installation Sideron a échoué : $InstallationError " +
-                    "La réactivation de l'installation existante a également échoué : $RecoveryError"
+                    "La restauration de l'installation existante a également échoué : $RecoveryError"
                 )
             }
 

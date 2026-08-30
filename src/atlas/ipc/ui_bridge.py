@@ -387,7 +387,7 @@ class SideronUiBridge:
             {
                 "type": "hello",
                 "source": "core",
-                "version": "3.3.6",
+                "version": "3.3.6-rc.1",
                 "state": self._state_snapshot(),
             }
         )
