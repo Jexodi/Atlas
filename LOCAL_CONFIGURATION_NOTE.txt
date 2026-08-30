@@ -1,0 +1,5 @@
+SIDERON local configuration note
+
+The local .env file is intentionally not included in this review archive because it may contain secrets such as the OpenAI API key.
+
+When replacing an existing SIDERON installation, keep your current local .env file or recreate it from .env.example. Legacy Atlas user data in C:\Atlas is preserved during migration.
