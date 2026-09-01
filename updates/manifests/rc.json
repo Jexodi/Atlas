@@ -1,8 +1,8 @@
 {
-    "version":  "3.3.6-rc.1",
+    "version":  "3.4.0-rc.1",
     "channel":  "rc",
-    "url":  "https://github.com/Jexodi/SIDERON/releases/download/v3.3.6-rc.1/SIDERON-3.3.6-rc.1.exe",
-    "sha256":  "45ceef1c01b86f442af09bbdc117088d105d4b7367ec9f0278707fac79376e96",
-    "notes":  "Sideron 3.3.6-rc.1 — Release Candidate du canal Experimental.",
-    "published_utc":  "2026-08-30T14:12:28Z"
+    "url":  "https://github.com/Jexodi/SIDERON/releases/download/v3.4.0-rc.1/SIDERON-3.4.0-rc.1.exe",
+    "sha256":  "b65d310cd94b90365da5c93c090f6985d9008815b35d74c4caf477895540cbd5",
+    "notes":  "Sideron 3.4.0-rc.1 — Release Candidate du canal Experimental.",
+    "published_utc":  "2026-09-01T20:03:52Z"
 }
