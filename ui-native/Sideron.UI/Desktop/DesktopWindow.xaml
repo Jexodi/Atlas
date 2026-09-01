@@ -1572,6 +1572,20 @@
                             </Button>
 
                             <Button
+                                x:Name="SettingsNavMemoryButton"
+                                Width="54"
+                                Height="54"
+                                Padding="0"
+                                Background="Transparent"
+                                BorderBrush="{StaticResource SideronWindowInnerBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="7"
+                                Click="SettingsMemoryNav_Click"
+                                ToolTipService.ToolTip="Mémoire">
+                                <FontIcon Glyph="&#xE8F1;" FontSize="18" Foreground="#D8D9E2" />
+                            </Button>
+
+                            <Button
                                 x:Name="SettingsNavStartupButton"
                                 Width="54"
                                 Height="54"
@@ -1820,7 +1834,7 @@
                                             x:Name="HomeVersionText"
                                             Grid.Column="1"
                                             VerticalAlignment="Center"
-                                            Text="Sideron 3.3.6"
+                                            Text="Sideron 3.4.0-rc.1"
                                             FontSize="13"
                                             FontWeight="SemiBold"
                                             Foreground="#D7EAF5" />
@@ -3733,6 +3747,148 @@
 
                         </ScrollViewer>
 
+                        <!-- MEMORY -->
+                        <ScrollViewer
+                            x:Name="SettingsMemorySection"
+                            Visibility="Collapsed"
+                            VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Disabled">
+
+                            <StackPanel Spacing="16">
+
+                                <Border
+                                    Padding="22"
+                                    CornerRadius="7"
+                                    Background="{StaticResource SideronWindowCardBrush}"
+                                    BorderBrush="{StaticResource SideronWindowInnerBorderBrush}"
+                                    BorderThickness="1">
+
+                                    <Grid ColumnSpacing="22">
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock
+                                                Text="Mémoire Sideron"
+                                                FontSize="24"
+                                                FontWeight="SemiBold"
+                                                Foreground="#F1F1F5" />
+
+                                            <TextBlock
+                                                Text="Consultez, recherchez et supprimez les souvenirs persistants conservés localement par Sideron."
+                                                TextWrapping="Wrap"
+                                                FontSize="12"
+                                                Foreground="#A0A2AF" />
+                                        </StackPanel>
+
+                                        <FontIcon
+                                            Grid.Column="1"
+                                            VerticalAlignment="Top"
+                                            Glyph="&#xE8F1;"
+                                            FontSize="30"
+                                            Foreground="#67D4FF" />
+
+                                    </Grid>
+
+                                </Border>
+
+                                <Border
+                                    Padding="18"
+                                    CornerRadius="7"
+                                    Background="{StaticResource SideronWindowCardBrush}"
+                                    BorderBrush="{StaticResource SideronWindowInnerBorderBrush}"
+                                    BorderThickness="1">
+
+                                    <Grid ColumnSpacing="12" RowSpacing="12">
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="190" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <TextBox
+                                            x:Name="MemorySearchBox"
+                                            Grid.Row="0"
+                                            Grid.Column="0"
+                                            PlaceholderText="Rechercher dans la mémoire…"
+                                            TextChanged="MemorySearchBox_TextChanged" />
+
+                                        <ComboBox
+                                            x:Name="MemoryCategoryComboBox"
+                                            Grid.Row="0"
+                                            Grid.Column="1"
+                                            SelectedIndex="0"
+                                            SelectionChanged="MemoryCategoryComboBox_SelectionChanged">
+                                            <ComboBoxItem Content="Toutes les catégories" Tag="" />
+                                            <ComboBoxItem Content="Préférences" Tag="preference" />
+                                            <ComboBoxItem Content="Alias" Tag="alias" />
+                                            <ComboBoxItem Content="Faits" Tag="fact" />
+                                            <ComboBoxItem Content="Applications" Tag="application" />
+                                            <ComboBoxItem Content="Projets" Tag="project" />
+                                            <ComboBoxItem Content="Autres" Tag="other" />
+                                        </ComboBox>
+
+                                        <Button
+                                            Grid.Row="0"
+                                            Grid.Column="2"
+                                            Content="Actualiser"
+                                            Click="MemoryRefresh_Click" />
+
+                                        <TextBlock
+                                            x:Name="MemorySummaryText"
+                                            Grid.Row="1"
+                                            Grid.ColumnSpan="3"
+                                            Text="Mémoire non chargée."
+                                            FontSize="11"
+                                            Foreground="#8F92A4" />
+
+                                    </Grid>
+
+                                </Border>
+
+                                <Border
+                                    Padding="18"
+                                    CornerRadius="7"
+                                    Background="{StaticResource SideronWindowCardSoftBrush}"
+                                    BorderBrush="{StaticResource SideronWindowInnerBorderBrush}"
+                                    BorderThickness="1">
+
+                                    <StackPanel Spacing="12">
+                                        <ProgressRing
+                                            x:Name="MemoryLoadingRing"
+                                            Width="22"
+                                            Height="22"
+                                            HorizontalAlignment="Left"
+                                            IsActive="False"
+                                            Visibility="Collapsed" />
+
+                                        <TextBlock
+                                            x:Name="MemoryEmptyText"
+                                            Text="Aucun souvenir à afficher."
+                                            Visibility="Collapsed"
+                                            FontSize="12"
+                                            Foreground="#8F92A4" />
+
+                                        <StackPanel
+                                            x:Name="MemoryItemsPanel"
+                                            Spacing="10" />
+                                    </StackPanel>
+
+                                </Border>
+
+                            </StackPanel>
+
+                        </ScrollViewer>
+
                         <!-- UPDATES -->
                         <ScrollViewer
                             x:Name="SettingsUpdatesSection"
@@ -3815,7 +3971,7 @@
                                             x:Name="UpdateCurrentVersionText"
                                             Grid.Row="0"
                                             Grid.Column="1"
-                                            Text="3.3.6"
+                                            Text="3.4.0-rc.1"
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Foreground="#ECECF2" />
@@ -4020,14 +4176,14 @@
 
                                             <TextBlock
                                                 x:Name="AboutVersionText"
-                                                Text="Sideron 3.3.6"
+                                                Text="Sideron 3.4.0-rc.1"
                                                 FontSize="24"
                                                 FontWeight="SemiBold"
                                                 Foreground="#F1F1F5" />
 
                                             <TextBlock
                                                 x:Name="AboutChannelText"
-                                                Text="Canal Release"
+                                                Text="Canal Experimental"
                                                 FontSize="11"
                                                 Foreground="#9294A4" />
 

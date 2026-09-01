@@ -125,10 +125,10 @@ public sealed partial class DesktopWindow : Window
     private const double DockWorkspaceGapDip = 10.0;
 
     private const string SideronVersion =
-        "3.3.6";
+        "3.4.0-rc.1";
 
     private const string SideronReleaseChannel =
-        "Release";
+        "Experimental";
 
     private bool _coreConnected;
 
@@ -3385,6 +3385,21 @@ public sealed partial class DesktopWindow : Window
                     }
                 ),
                 (
+                    "memory",
+                    new[]
+                    {
+                        "memoire",
+                        "memory",
+                        "souvenir",
+                        "souvenirs",
+                        "preference",
+                        "preferences",
+                        "alias",
+                        "fait",
+                        "faits",
+                    }
+                ),
+                (
                     "startup",
                     new[]
                     {
@@ -3527,6 +3542,10 @@ public sealed partial class DesktopWindow : Window
                 UpdateStorageSettingsPresentation();
                 break;
 
+            case "memory":
+                RequestMemoryItems();
+                break;
+
             case "startup":
                 UpdateStartupRegistrationPresentation();
                 break;
@@ -3567,6 +3586,9 @@ public sealed partial class DesktopWindow : Window
 
             "storage" =>
                 "Stockage",
+
+            "memory" =>
+                "Mémoire",
 
             "startup" =>
                 "Démarrage",
@@ -4638,6 +4660,603 @@ public sealed partial class DesktopWindow : Window
         UpdateStorageSettingsPresentation();
     }
 
+    private void SettingsMemoryNav_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        SelectSettingsSection(
+            "memory");
+
+        RequestMemoryItems();
+    }
+
+    private void MemoryRefresh_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        RequestMemoryItems();
+    }
+
+    private void MemorySearchBox_TextChanged(
+        object sender,
+        TextChangedEventArgs e)
+    {
+        if (
+            !_initialized
+            || SettingsMemorySection.Visibility
+            != Visibility.Visible
+        )
+        {
+            return;
+        }
+
+        RequestMemoryItems();
+    }
+
+    private void MemoryCategoryComboBox_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (
+            !_initialized
+            || SettingsMemorySection.Visibility
+            != Visibility.Visible
+        )
+        {
+            return;
+        }
+
+        RequestMemoryItems();
+    }
+
+    private string GetSelectedMemoryCategory()
+    {
+        if (
+            MemoryCategoryComboBox.SelectedItem
+            is ComboBoxItem item
+            && item.Tag is string category
+        )
+        {
+            return category.Trim();
+        }
+
+        return string.Empty;
+    }
+
+    private void RequestMemoryItems()
+    {
+        MemoryLoadingRing.IsActive =
+            true;
+
+        MemoryLoadingRing.Visibility =
+            Visibility.Visible;
+
+        MemoryEmptyText.Visibility =
+            Visibility.Collapsed;
+
+        if (!_ipc.IsConnected)
+        {
+            MemoryLoadingRing.IsActive =
+                false;
+
+            MemoryLoadingRing.Visibility =
+                Visibility.Collapsed;
+
+            MemorySummaryText.Text =
+                "Core non connecté · mémoire indisponible.";
+
+            return;
+        }
+
+        var query =
+            MemorySearchBox.Text.Trim();
+
+        var category =
+            GetSelectedMemoryCategory();
+
+        var command =
+            string.IsNullOrWhiteSpace(query)
+                ? "memory.list"
+                : "memory.search";
+
+        _ = _ipc.SendCommandAsync(
+            command,
+            new
+            {
+                query,
+                category,
+            });
+    }
+
+    private void HandleMemoryItems(
+        JsonElement message)
+    {
+        MemoryLoadingRing.IsActive =
+            false;
+
+        MemoryLoadingRing.Visibility =
+            Visibility.Collapsed;
+
+        MemoryItemsPanel.Children.Clear();
+
+        if (
+            !message.TryGetProperty(
+                "payload",
+                out var payload)
+            || payload.ValueKind
+                != JsonValueKind.Object
+            || !payload.TryGetProperty(
+                "items",
+                out var items)
+            || items.ValueKind
+                != JsonValueKind.Array
+        )
+        {
+            MemorySummaryText.Text =
+                "Réponse mémoire invalide.";
+
+            MemoryEmptyText.Visibility =
+                Visibility.Visible;
+
+            return;
+        }
+
+        var count =
+            0;
+
+        foreach (
+            var item
+            in items.EnumerateArray())
+        {
+            if (
+                item.ValueKind
+                != JsonValueKind.Object
+            )
+            {
+                continue;
+            }
+
+            var memoryId =
+                item.TryGetProperty(
+                    "id",
+                    out var idNode)
+                && idNode.TryGetInt32(
+                    out var parsedId)
+                    ? parsedId
+                    : 0;
+
+            if (memoryId <= 0)
+            {
+                continue;
+            }
+
+            var category =
+                ReadJsonString(
+                    item,
+                    "category")
+                ?? "other";
+
+            var content =
+                ReadJsonString(
+                    item,
+                    "content")
+                ?? string.Empty;
+
+            var key =
+                ReadJsonString(
+                    item,
+                    "key");
+
+            var updatedAt =
+                ReadJsonString(
+                    item,
+                    "updated_at")
+                ?? string.Empty;
+
+            var tags =
+                new List<string>();
+
+            if (
+                item.TryGetProperty(
+                    "tags",
+                    out var tagsNode)
+                && tagsNode.ValueKind
+                    == JsonValueKind.Array
+            )
+            {
+                foreach (
+                    var tagNode
+                    in tagsNode.EnumerateArray())
+                {
+                    if (
+                        tagNode.ValueKind
+                        == JsonValueKind.String
+                        && !string.IsNullOrWhiteSpace(
+                            tagNode.GetString())
+                    )
+                    {
+                        tags.Add(
+                            tagNode.GetString()!);
+                    }
+                }
+            }
+
+            MemoryItemsPanel.Children.Add(
+                CreateMemoryCard(
+                    memoryId,
+                    category,
+                    content,
+                    key,
+                    tags,
+                    updatedAt));
+
+            count++;
+        }
+
+        var query =
+            payload.TryGetProperty(
+                "query",
+                out var queryNode)
+            && queryNode.ValueKind
+                == JsonValueKind.String
+                ? queryNode.GetString()
+                : string.Empty;
+
+        MemorySummaryText.Text =
+            count == 0
+                ? "Aucun souvenir correspondant."
+                : string.IsNullOrWhiteSpace(
+                    query)
+                    ? $"{count} souvenir(s) affiché(s)."
+                    : $"{count} résultat(s) pour « {query} ».";
+
+        MemoryEmptyText.Visibility =
+            count == 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+    }
+
+    private FrameworkElement CreateMemoryCard(
+        int memoryId,
+        string category,
+        string content,
+        string? key,
+        IReadOnlyList<string> tags,
+        string updatedAt)
+    {
+        var card =
+            new Border
+            {
+                Padding =
+                    new Thickness(
+                        16),
+                CornerRadius =
+                    new CornerRadius(
+                        7),
+                Background =
+                    CreateBrush(
+                        "#2A252938"),
+                BorderBrush =
+                    CreateBrush(
+                        "#34585C6E"),
+                BorderThickness =
+                    new Thickness(
+                        1),
+            };
+
+        var grid =
+            new Grid
+            {
+                ColumnSpacing =
+                    16,
+            };
+
+        grid.ColumnDefinitions.Add(
+            new ColumnDefinition
+            {
+                Width =
+                    new GridLength(
+                        1,
+                        GridUnitType.Star),
+            });
+
+        grid.ColumnDefinitions.Add(
+            new ColumnDefinition
+            {
+                Width =
+                    GridLength.Auto,
+            });
+
+        var body =
+            new StackPanel
+            {
+                Spacing =
+                    5,
+            };
+
+        body.Children.Add(
+            new TextBlock
+            {
+                Text =
+                    GetMemoryCategoryDisplayName(
+                        category),
+                FontSize =
+                    10,
+                CharacterSpacing =
+                    130,
+                Foreground =
+                    CreateBrush(
+                        "#67D4FF"),
+            });
+
+        body.Children.Add(
+            new TextBlock
+            {
+                Text =
+                    content,
+                TextWrapping =
+                    TextWrapping.Wrap,
+                FontSize =
+                    13,
+                Foreground =
+                    CreateBrush(
+                        "#F1F1F5"),
+            });
+
+        var metadataParts =
+            new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(
+                key))
+        {
+            metadataParts.Add(
+                $"Clé : {key}");
+        }
+
+        if (tags.Count > 0)
+        {
+            metadataParts.Add(
+                $"Tags : {string.Join(", ", tags)}");
+        }
+
+        var formattedDate =
+            FormatMemoryTimestamp(
+                updatedAt);
+
+        if (!string.IsNullOrWhiteSpace(
+                formattedDate))
+        {
+            metadataParts.Add(
+                $"Modifié : {formattedDate}");
+        }
+
+        if (metadataParts.Count > 0)
+        {
+            body.Children.Add(
+                new TextBlock
+                {
+                    Text =
+                        string.Join(
+                            " · ",
+                            metadataParts),
+                    TextWrapping =
+                        TextWrapping.Wrap,
+                    FontSize =
+                        10,
+                    Foreground =
+                        CreateBrush(
+                            "#8F92A4"),
+                });
+        }
+
+        var deleteButton =
+            new Button
+            {
+                Content =
+                    "Supprimer",
+                VerticalAlignment =
+                    VerticalAlignment.Top,
+            };
+
+        deleteButton.Click +=
+            async (_, _) =>
+                await DeleteMemoryItemAsync(
+                    memoryId,
+                    content);
+
+        Grid.SetColumn(
+            body,
+            0);
+
+        Grid.SetColumn(
+            deleteButton,
+            1);
+
+        grid.Children.Add(
+            body);
+
+        grid.Children.Add(
+            deleteButton);
+
+        card.Child =
+            grid;
+
+        return card;
+    }
+
+    private async Task DeleteMemoryItemAsync(
+        int memoryId,
+        string content)
+    {
+        var preview =
+            content.Length > 180
+                ? content[..180] + "…"
+                : content;
+
+        var dialog =
+            new ContentDialog
+            {
+                Title =
+                    "Supprimer ce souvenir ?",
+                Content =
+                    $"« {preview} »\n\nCette suppression est définitive.",
+                PrimaryButtonText =
+                    "Supprimer",
+                CloseButtonText =
+                    "Annuler",
+                DefaultButton =
+                    ContentDialogButton.Close,
+                XamlRoot =
+                    Root.XamlRoot,
+            };
+
+        ApplySideronDialogStyle(
+            dialog);
+
+        if (
+            await dialog.ShowAsync()
+            != ContentDialogResult.Primary
+        )
+        {
+            return;
+        }
+
+        if (
+            !await _ipc.SendCommandAsync(
+                "memory.delete",
+                new
+                {
+                    id =
+                        memoryId,
+                })
+        )
+        {
+            await ShowMessageAsync(
+                "Mémoire",
+                "Impossible d’envoyer la suppression au Core.");
+
+            return;
+        }
+
+        MemorySummaryText.Text =
+            "Suppression en cours…";
+    }
+
+    private void HandleMemoryDeleted(
+        JsonElement message)
+    {
+        if (
+            !message.TryGetProperty(
+                "payload",
+                out var payload)
+            || payload.ValueKind
+                != JsonValueKind.Object
+        )
+        {
+            return;
+        }
+
+        var deleted =
+            payload.TryGetProperty(
+                "deleted",
+                out var deletedNode)
+            && deletedNode.ValueKind
+                == JsonValueKind.True;
+
+        SettingsStatusText.Text =
+            deleted
+                ? "Souvenir supprimé."
+                : "Souvenir déjà absent.";
+
+        RequestMemoryItems();
+    }
+
+    private void HandleMemoryError(
+        JsonElement message)
+    {
+        MemoryLoadingRing.IsActive =
+            false;
+
+        MemoryLoadingRing.Visibility =
+            Visibility.Collapsed;
+
+        var reason =
+            "Erreur mémoire inconnue.";
+
+        if (
+            message.TryGetProperty(
+                "payload",
+                out var payload)
+            && payload.ValueKind
+                == JsonValueKind.Object
+        )
+        {
+            reason =
+                ReadJsonString(
+                    payload,
+                    "reason")
+                ?? reason;
+        }
+
+        MemorySummaryText.Text =
+            reason;
+
+        SettingsStatusText.Text =
+            $"Mémoire : {reason}";
+    }
+
+    private static string GetMemoryCategoryDisplayName(
+        string category)
+    {
+        return category switch
+        {
+            "preference" =>
+                "PRÉFÉRENCE",
+
+            "alias" =>
+                "ALIAS",
+
+            "fact" =>
+                "FAIT",
+
+            "application" =>
+                "APPLICATION",
+
+            "project" =>
+                "PROJET",
+
+            _ =>
+                "AUTRE",
+        };
+    }
+
+    private static string FormatMemoryTimestamp(
+        string value)
+    {
+        if (
+            string.IsNullOrWhiteSpace(
+                value)
+        )
+        {
+            return string.Empty;
+        }
+
+        if (
+            DateTime.TryParse(
+                value,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeLocal,
+                out var parsed)
+        )
+        {
+            return parsed.ToString(
+                "dd/MM/yyyy HH:mm",
+                CultureInfo.CurrentCulture);
+        }
+
+        return value;
+    }
+
     private void SettingsStartupNav_Click(
         object sender,
         RoutedEventArgs e)
@@ -5461,6 +6080,11 @@ public sealed partial class DesktopWindow : Window
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
+        SettingsMemorySection.Visibility =
+            section == "memory"
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
         SettingsStartupSection.Visibility =
             section == "startup"
                 ? Visibility.Visible
@@ -5518,6 +6142,13 @@ public sealed partial class DesktopWindow : Window
                     "Zone de travail dédiée à Sideron";
                 break;
 
+            case "memory":
+                SettingsPageTitleText.Text =
+                    "Mémoire";
+                SettingsPageSubtitleText.Text =
+                    "Souvenirs persistants conservés localement";
+                break;
+
             case "startup":
                 SettingsPageTitleText.Text =
                     "Démarrage";
@@ -5572,6 +6203,9 @@ public sealed partial class DesktopWindow : Window
         ApplySettingsNavState(
             SettingsNavStorageButton,
             section == "storage");
+        ApplySettingsNavState(
+            SettingsNavMemoryButton,
+            section == "memory");
         ApplySettingsNavState(
             SettingsNavStartupButton,
             section == "startup");
@@ -8494,6 +9128,14 @@ public sealed partial class DesktopWindow : Window
 
                     _ = _ipc.SendCommandAsync(
                         "audio.get_listening_mode");
+
+                    if (
+                        SettingsMemorySection.Visibility
+                        == Visibility.Visible
+                    )
+                    {
+                        RequestMemoryItems();
+                    }
                 }
                 else
                 {
@@ -8501,6 +9143,15 @@ public sealed partial class DesktopWindow : Window
                         null,
                         false,
                         "SIDERON");
+
+                    MemoryLoadingRing.IsActive =
+                        false;
+
+                    MemoryLoadingRing.Visibility =
+                        Visibility.Collapsed;
+
+                    MemorySummaryText.Text =
+                        "Core non connecté · mémoire indisponible.";
                 }
 
                 SystemPanelCoreText.Text =
@@ -8761,6 +9412,48 @@ public sealed partial class DesktopWindow : Window
 
                 break;
 
+            case "memory.items":
+
+                HandleMemoryItems(
+                    message);
+
+                break;
+
+            case "memory.deleted":
+
+                HandleMemoryDeleted(
+                    message);
+
+                break;
+
+            case "memory.error":
+
+                HandleMemoryError(
+                    message);
+
+                break;
+
+            case "automation.reminder_due":
+
+                _ = ShowAutomationReminderAsync(
+                    message);
+
+                break;
+
+            case "proactivity.suggestion":
+
+                _ = ShowProactivitySuggestionAsync(
+                    message);
+
+                break;
+
+            case "system.event":
+
+                HandleSystemEvent(
+                    message);
+
+                break;
+
             case "ai.speech_started":
 
                 CoreStatusText.Text =
@@ -8782,6 +9475,168 @@ public sealed partial class DesktopWindow : Window
                     "Core connecté · prêt";
 
                 break;
+        }
+    }
+
+    private void HandleSystemEvent(
+        JsonElement message)
+    {
+        if (
+            !message.TryGetProperty(
+                "payload",
+                out var payload)
+            || payload.ValueKind
+                != JsonValueKind.Object
+        )
+        {
+            return;
+        }
+
+        if (
+            !payload.TryGetProperty(
+                "type",
+                out var typeElement)
+            || typeElement.ValueKind
+                != JsonValueKind.String
+        )
+        {
+            return;
+        }
+
+        var eventType =
+            typeElement.GetString();
+
+        if (
+            !string.Equals(
+                eventType,
+                "system.audio_devices_changed",
+                StringComparison.Ordinal)
+        )
+        {
+            return;
+        }
+
+        // Le Core vient de détecter un hot-plug audio. Rafraîchir
+        // immédiatement les listes Settings, indépendamment du niveau
+        // de proactivité et sans modifier la sélection utilisateur.
+        if (_ipc.IsConnected)
+        {
+            _ = _ipc.SendCommandAsync(
+                "audio.get_input_devices");
+
+            _ = _ipc.SendCommandAsync(
+                "audio.get_output_devices");
+        }
+    }
+
+    private async Task ShowAutomationReminderAsync(
+        JsonElement message)
+    {
+        if (
+            !message.TryGetProperty(
+                "payload",
+                out var payload)
+            || payload.ValueKind
+                != JsonValueKind.Object
+        )
+        {
+            return;
+        }
+
+        var reminderText =
+            payload.TryGetProperty(
+                "message",
+                out var messageNode)
+            && messageNode.ValueKind
+                == JsonValueKind.String
+                ? messageNode.GetString()
+                : null;
+
+        if (string.IsNullOrWhiteSpace(reminderText))
+        {
+            return;
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "Rappel SIDERON",
+            Content = reminderText,
+            CloseButtonText = "Fermer",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = Root.XamlRoot,
+        };
+
+        ApplySideronDialogStyle(dialog);
+
+        try
+        {
+            await dialog.ShowAsync();
+        }
+        catch (Exception exception)
+        {
+            UiLog.Error(
+                "Unable to show SIDERON reminder.",
+                exception);
+        }
+    }
+
+    private async Task ShowProactivitySuggestionAsync(
+        JsonElement message)
+    {
+        if (
+            !message.TryGetProperty(
+                "payload",
+                out var payload)
+            || payload.ValueKind
+                != JsonValueKind.Object
+        )
+        {
+            return;
+        }
+
+        var title =
+            payload.TryGetProperty(
+                "title",
+                out var titleNode)
+            && titleNode.ValueKind == JsonValueKind.String
+                ? titleNode.GetString()
+                : "Suggestion SIDERON";
+
+        var suggestion =
+            payload.TryGetProperty(
+                "message",
+                out var messageNode)
+            && messageNode.ValueKind == JsonValueKind.String
+                ? messageNode.GetString()
+                : null;
+
+        if (string.IsNullOrWhiteSpace(suggestion))
+        {
+            return;
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = string.IsNullOrWhiteSpace(title)
+                ? "Suggestion SIDERON"
+                : title,
+            Content = suggestion,
+            CloseButtonText = "Fermer",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = Root.XamlRoot,
+        };
+
+        ApplySideronDialogStyle(dialog);
+
+        try
+        {
+            await dialog.ShowAsync();
+        }
+        catch (Exception exception)
+        {
+            UiLog.Error(
+                "Unable to show SIDERON proactive suggestion.",
+                exception);
         }
     }
 

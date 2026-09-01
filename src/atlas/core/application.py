@@ -23,6 +23,14 @@ from atlas.skills.catalog import (
 )
 
 from atlas.storage import SideronStorage
+from atlas.memory import MemoryManager
+from atlas.automation import AutomationManager
+from atlas.system_events import SystemEventManager
+from atlas.system_events.provider import SystemEventSnapshotProvider
+from atlas.proactivity import ProactivityManager
+from atlas.vision import VisionPolicy
+from atlas.vision.analyzer import VisionAnalyzer
+from atlas.skills.vision import AnalyzeActiveWindowSkill
 
 from atlas.context.manager import ContextManager
 from atlas.core.lifecycle import LifecycleManager
@@ -62,6 +70,12 @@ class SideronApplication:
 
         self.skill_manager = None
         self.storage = None
+        self.memory = None
+        self.automation = None
+        self.system_events = None
+        self.proactivity = None
+        self.vision_analyzer = None
+        self.vision_policy = None
 
         self.service_client = (
             SideronServiceClient(
@@ -137,6 +151,82 @@ class SideronApplication:
             self.storage.get_root(),
         )
 
+        memory_database = self.storage.workspace_path(
+            "Memory/sideron-memory.db"
+        )
+
+        self.memory = MemoryManager(
+            memory_database
+        )
+        self.memory.initialize()
+
+        self.logger.info(
+            "Mémoire persistante SIDERON initialisée : %s",
+            self.memory.database_path,
+        )
+
+        automation_database = self.storage.workspace_path(
+            "System/sideron-automation.db"
+        )
+
+        self.automation = AutomationManager(
+            automation_database,
+            event_bus=self.events,
+            logger=self.logger,
+        )
+        self.automation.initialize()
+
+        self.logger.info(
+            "Scheduler persistant SIDERON initialisé : %s",
+            self.automation.database_path,
+        )
+
+        system_event_provider = SystemEventSnapshotProvider(
+            storage_root=self.storage.get_root(),
+            audio_devices=self.audio.devices,
+        )
+        self.system_events = SystemEventManager(
+            provider=system_event_provider,
+            event_bus=self.events,
+            logger=self.logger,
+            disk_low_threshold_percent=self.config.get(
+                "system.events.disk_low_threshold_percent",
+                10.0,
+            ),
+        )
+
+        self.proactivity = ProactivityManager(
+            event_bus=self.events,
+            logger=self.logger,
+            level=self.config.get(
+                "proactivity.level",
+                "normal",
+            ),
+            cooldown_seconds=self.config.get(
+                "proactivity.cooldown_seconds",
+                120.0,
+            ),
+        )
+
+        self.logger.info(
+            "Proactivité locale SIDERON initialisée : niveau=%s",
+            self.proactivity.level,
+        )
+
+        self.vision_policy = VisionPolicy()
+        self.vision_analyzer = VisionAnalyzer(
+            model=self.config.get(
+                "openai.vision.model",
+                "gpt-5.6-luna",
+            ),
+            logger=self.logger,
+        )
+
+        self.logger.info(
+            "Vision SIDERON préparée : modèle=%s",
+            self.vision_analyzer.model,
+        )
+
         self.ui_bridge.start()
         self.telemetry.start()
 
@@ -201,6 +291,21 @@ class SideronApplication:
         )
 
         self.events.subscribe(
+            "automation.reminder_due",
+            self._on_automation_reminder_due,
+        )
+
+        self.events.subscribe(
+            "system.event",
+            self._on_system_event,
+        )
+
+        self.events.subscribe(
+            "proactivity.suggestion",
+            self._on_proactivity_suggestion,
+        )
+
+        self.events.subscribe(
             "ui.native.command",
             self._on_native_ui_command,
         )
@@ -239,12 +344,31 @@ class SideronApplication:
             storage=self.storage,
             service_client=self.service_client,
             event_bus=self.events,
+            memory=self.memory,
+            automation=self.automation,
         )
 
         self.skills.register(
             SetListeningModeSkill(
                 audio_manager=self.audio,
                 config=self.config,
+            )
+        )
+
+        self.skills.register(
+            AnalyzeActiveWindowSkill(
+                storage=self.storage,
+                analyzer=self.vision_analyzer,
+                policy=self.vision_policy,
+                privacy_mode_provider=(
+                    lambda: bool(
+                        self.config.get(
+                            "privacy.enabled",
+                            False,
+                        )
+                    )
+                ),
+                logger=self.logger,
             )
         )
 
@@ -276,6 +400,21 @@ class SideronApplication:
         )
 
         await self.lifecycle.start()
+
+        self.lifecycle.create_task(
+            "automation.scheduler",
+            self.automation.run(),
+        )
+
+        self.lifecycle.create_task(
+            "system.events",
+            self.system_events.run(
+                interval=self.config.get(
+                    "system.events.poll_interval_seconds",
+                    5.0,
+                )
+            ),
+        )
 
         self.lifecycle.create_task(
             "context.monitor",
@@ -457,6 +596,19 @@ class SideronApplication:
                 "reason": reason,
                 "mode": self.state.mode,
             },
+        )
+
+    def _on_automation_reminder_due(
+        self,
+        payload=None,
+    ) -> None:
+
+        if not isinstance(payload, dict):
+            return
+
+        self.ui_bridge.send_event(
+            "automation.reminder_due",
+            payload,
         )
 
     def _on_native_ui_command(
@@ -651,6 +803,85 @@ class SideronApplication:
 
             return
 
+        if name in ("memory.list", "memory.search", "memory.delete"):
+            if self.memory is None:
+                self.ui_bridge.send_event(
+                    "memory.error",
+                    {"reason": "La mémoire SIDERON n'est pas initialisée."},
+                )
+                return
+
+            try:
+                raw_category = command_payload.get("category")
+                category = (
+                    raw_category.strip()
+                    if isinstance(raw_category, str) and raw_category.strip()
+                    else None
+                )
+
+                if name == "memory.delete":
+                    memory_id = command_payload.get("id")
+                    if isinstance(memory_id, bool):
+                        raise ValueError("Identifiant mémoire invalide.")
+                    try:
+                        memory_id = int(memory_id)
+                    except (TypeError, ValueError) as exc:
+                        raise ValueError("Identifiant mémoire invalide.") from exc
+
+                    deleted = self.memory.delete(memory_id)
+                    self.ui_bridge.send_event(
+                        "memory.deleted",
+                        {
+                            "id": memory_id,
+                            "deleted": deleted,
+                        },
+                    )
+                    return
+
+                if name == "memory.search":
+                    query = str(command_payload.get("query") or "").strip()
+                    if query:
+                        records = self.memory.search(
+                            query,
+                            category=category,
+                            limit=100,
+                        )
+                    else:
+                        records = self.memory.list(
+                            category=category,
+                            limit=200,
+                        )
+                else:
+                    records = self.memory.list(
+                        category=category,
+                        limit=200,
+                    )
+
+                self.ui_bridge.send_event(
+                    "memory.items",
+                    {
+                        "items": [
+                            record.to_dict()
+                            for record in records
+                        ],
+                        "query": (
+                            str(command_payload.get("query") or "").strip()
+                            if name == "memory.search"
+                            else ""
+                        ),
+                        "category": category or "",
+                    },
+                )
+            except Exception as exc:
+                self.logger.exception(
+                    "Impossible de traiter la commande mémoire de l'UI"
+                )
+                self.ui_bridge.send_event(
+                    "memory.error",
+                    {"reason": str(exc)},
+                )
+            return
+
         if name == "security.get_permission_state":
 
             self._send_permission_state()
@@ -759,6 +990,39 @@ class SideronApplication:
                 "mode":
                     requested_mode.value,
             },
+        )
+
+    def _on_proactivity_suggestion(
+        self,
+        payload=None,
+    ) -> None:
+
+        if not isinstance(payload, dict):
+            return
+
+        self.ui_bridge.send_event(
+            "proactivity.suggestion",
+            payload,
+        )
+
+    def _on_system_event(
+        self,
+        payload,
+    ) -> None:
+
+        if not isinstance(payload, dict):
+            return
+
+        event_type = str(payload.get("type") or "system.event")
+        self.logger.info(
+            "Événement système : %s | %s",
+            event_type,
+            {key: value for key, value in payload.items() if key != "type"},
+        )
+
+        self.ui_bridge.send_event(
+            "system.event",
+            payload,
         )
 
     def _on_active_window_changed(

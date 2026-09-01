@@ -96,7 +96,7 @@
                             x:Name="VersionValue"
                             Grid.Row="2"
                             Grid.Column="1"
-                            Text="3.3.6"
+                            Text="3.4.0-rc.1"
                             Foreground="{StaticResource SideronTextBrush}" />
 
                     </Grid>

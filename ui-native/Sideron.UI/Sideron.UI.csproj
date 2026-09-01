@@ -10,9 +10,9 @@
     <Product>SIDERON</Product>
     <Title>SIDERON</Title>
     <Description>System for Intelligent Dialogue, Execution, Reasoning, Operations and Navigation</Description>
-    <Version>3.3.6</Version>
-    <FileVersion>3.3.6.0</FileVersion>
-    <InformationalVersion>3.3.6</InformationalVersion>
+    <Version>3.4.0</Version>
+    <FileVersion>3.4.0.0</FileVersion>
+    <InformationalVersion>3.4.0-rc.1</InformationalVersion>
 
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>

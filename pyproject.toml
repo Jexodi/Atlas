@@ -1,6 +1,6 @@
 [project]
 name = "sideron"
-version = "3.3.6"
+version = "3.4.0-rc.1"
 description = "SIDERON - System for Intelligent Dialogue, Execution, Reasoning, Operations and Navigation"
 requires-python = ">=3.12"
 

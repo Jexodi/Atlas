@@ -218,7 +218,7 @@
                             Foreground="{StaticResource SideronSecondaryTextBrush}" />
 
                         <TextBlock
-                            Text="3.3.6"
+                            Text="3.4.0-rc.1"
                             FontFamily="Segoe UI Variable"
                             FontSize="24"
                             FontWeight="SemiBold"

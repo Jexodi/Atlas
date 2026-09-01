@@ -65,7 +65,7 @@ $InstallerMutexName = "Global\SIDERON.Setup.Installation"
 $InstallerMutex = $null
 $InstallerMutexOwned = $false
 
-$SideronVersion = "3.3.6"
+$SideronVersion = "3.4.0-rc.1"
 $SideronPublisher = "SIDERON"
 $UninstallKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\SIDERON"
 $UninstallExeInstalled = Join-Path $InstallRoot "SIDERON.Uninstall.exe"
@@ -2214,7 +2214,7 @@ Write-UpdateProgress `
     -Message "Initialisation d’Sideron..."
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host " Installation Sideron 3.3.6" -ForegroundColor Cyan
+Write-Host " Installation Sideron 3.4.0-rc.1" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 

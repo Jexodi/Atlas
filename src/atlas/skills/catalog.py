@@ -172,12 +172,27 @@ from atlas.skills.service.restart_service import (
     RestartServiceSkill,
 )
 
+from atlas.skills.memory import (
+    DeleteMemorySkill,
+    ListMemoriesSkill,
+    SearchMemorySkill,
+    StoreMemorySkill,
+)
+
+from atlas.skills.automation import (
+    CancelAutomationTaskSkill,
+    CreateReminderSkill,
+    ListAutomationTasksSkill,
+)
+
 
 def register_default_skills(
     registry,
     storage,
     service_client,
     event_bus,
+    memory,
+    automation,
 ) -> None:
 
     # =================================================
@@ -462,6 +477,56 @@ def register_default_skills(
         OpenWorkspaceDirectorySkill(
             storage=storage,
             event_bus=event_bus,
+        )
+    )
+
+    # =================================================
+    # Mémoire persistante
+    # =================================================
+
+    registry.register(
+        StoreMemorySkill(
+            memory=memory
+        )
+    )
+
+    registry.register(
+        SearchMemorySkill(
+            memory=memory
+        )
+    )
+
+    registry.register(
+        ListMemoriesSkill(
+            memory=memory
+        )
+    )
+
+    registry.register(
+        DeleteMemorySkill(
+            memory=memory
+        )
+    )
+
+    # =================================================
+    # Automatisation / rappels
+    # =================================================
+
+    registry.register(
+        CreateReminderSkill(
+            automation=automation
+        )
+    )
+
+    registry.register(
+        ListAutomationTasksSkill(
+            automation=automation
+        )
+    )
+
+    registry.register(
+        CancelAutomationTaskSkill(
+            automation=automation
         )
     )
 

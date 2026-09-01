@@ -14,6 +14,12 @@ MAX_TOOL_DICT_ITEMS = 40
 MAX_TOOL_STRING_CHARS = 2500
 MAX_TOOL_COMPACT_DEPTH = 5
 
+REALTIME_RECONNECT_INITIAL_DELAY = 2.0
+REALTIME_RECONNECT_MAX_DELAY = 60.0
+REALTIME_RECONNECT_MULTIPLIER = 2.0
+REALTIME_RATE_LIMIT_INITIAL_DELAY = 60.0
+REALTIME_RATE_LIMIT_MAX_DELAY = 300.0
+
 
 class RealtimeManager:
 
@@ -97,56 +103,262 @@ class RealtimeManager:
                 "RealtimeManager non initialisé."
             )
 
-        self.logger.info(
-            "Connexion OpenAI Realtime..."
+        reconnect_delay = (
+            REALTIME_RECONNECT_INITIAL_DELAY
         )
 
-        try:
+        while True:
 
-            async with self.client.realtime.connect(
-                model=self.model,
-            ) as connection:
-
-                self.connection = connection
-                self._connected = True
-
-                await self._configure_session()
-
-                self.event_bus.publish(
-                    "ai.realtime.connected"
-                )
-
-                self.logger.info(
-                    "Connexion OpenAI Realtime établie."
-                )
-
-                async for event in connection:
-
-                    await self._handle_event(
-                        event
-                    )
-
-        except asyncio.CancelledError:
+            wait_seconds = reconnect_delay
 
             self.logger.info(
-                "Connexion OpenAI Realtime arrêtée."
+                "Connexion OpenAI Realtime..."
             )
 
-            raise
+            try:
 
-        except Exception:
+                async with self.client.realtime.connect(
+                    model=self.model,
+                ) as connection:
 
-            self.logger.exception(
-                "Erreur OpenAI Realtime."
+                    self.connection = connection
+                    self._connected = True
+
+                    # Une connexion réussie remet le backoff à sa
+                    # valeur initiale. Une future coupure ne doit donc
+                    # pas hériter d'un délai accumulé ancien.
+                    reconnect_delay = (
+                        REALTIME_RECONNECT_INITIAL_DELAY
+                    )
+
+                    await self._configure_session()
+
+                    self.event_bus.publish(
+                        "ai.realtime.connected"
+                    )
+
+                    self.logger.info(
+                        "Connexion OpenAI Realtime établie."
+                    )
+
+                    async for event in connection:
+
+                        await self._handle_event(
+                            event
+                        )
+
+            except asyncio.CancelledError:
+
+                self.logger.info(
+                    "Connexion OpenAI Realtime arrêtée."
+                )
+
+                raise
+
+            except Exception as exc:
+
+                status_code = (
+                    self._get_connection_status_code(
+                        exc
+                    )
+                )
+
+                retryable = (
+                    self._is_retryable_connection_error(
+                        status_code
+                    )
+                )
+
+                if not retryable:
+
+                    self.logger.exception(
+                        "Erreur OpenAI Realtime non récupérable "
+                        "automatiquement%s. Une intervention "
+                        "est nécessaire.",
+                        (
+                            f" (HTTP {status_code})"
+                            if status_code is not None
+                            else ""
+                        ),
+                    )
+
+                    return
+
+                retry_after = (
+                    self._get_retry_after_seconds(
+                        exc
+                    )
+                )
+
+                if status_code == 429:
+                    # Un 429 signifie que le serveur demande de ralentir.
+                    # Eviter les tentatives rapides (2 s, 4 s, 8 s) qui
+                    # entretiennent potentiellement la limitation.
+                    wait_seconds = max(
+                        REALTIME_RATE_LIMIT_INITIAL_DELAY,
+                        retry_after or 0.0,
+                        reconnect_delay,
+                    )
+                else:
+                    wait_seconds = max(
+                        reconnect_delay,
+                        retry_after or 0.0,
+                    )
+
+                self.logger.warning(
+                    "Connexion OpenAI Realtime indisponible%s : %s. "
+                    "Nouvelle tentative dans %.0f seconde(s).",
+                    (
+                        f" (HTTP {status_code})"
+                        if status_code is not None
+                        else ""
+                    ),
+                    exc,
+                    wait_seconds,
+                )
+
+            finally:
+
+                was_connected = self._connected
+
+                self.connection = None
+                self._connected = False
+                self._reset_connection_state()
+
+                if was_connected:
+                    self.event_bus.publish(
+                        "ai.realtime.disconnected"
+                    )
+                elif not self.connected:
+                    # Publier également l'état hors ligne après un
+                    # échec de handshake afin que l'UI ne conserve
+                    # jamais un ancien état connecté.
+                    self.event_bus.publish(
+                        "ai.realtime.disconnected"
+                    )
+
+            await asyncio.sleep(
+                wait_seconds
             )
 
-        finally:
-            self.connection = None
-            self._connected = False
+            if status_code == 429:
+                reconnect_delay = min(
+                    max(
+                        reconnect_delay,
+                        REALTIME_RATE_LIMIT_INITIAL_DELAY,
+                    )
+                    * REALTIME_RECONNECT_MULTIPLIER,
+                    REALTIME_RATE_LIMIT_MAX_DELAY,
+                )
+            else:
+                reconnect_delay = min(
+                    reconnect_delay
+                    * REALTIME_RECONNECT_MULTIPLIER,
+                    REALTIME_RECONNECT_MAX_DELAY,
+                )
 
-            self.event_bus.publish(
-                "ai.realtime.disconnected"
+    @staticmethod
+    def _get_connection_status_code(
+        exc: Exception,
+    ) -> int | None:
+
+        status_code = getattr(
+            exc,
+            "status_code",
+            None,
+        )
+
+        if isinstance(status_code, int):
+            return status_code
+
+        response = getattr(
+            exc,
+            "response",
+            None,
+        )
+
+        if response is None:
+            return None
+
+        status_code = getattr(
+            response,
+            "status_code",
+            None,
+        )
+
+        if isinstance(status_code, int):
+            return status_code
+
+        return None
+
+    @staticmethod
+    def _get_retry_after_seconds(
+        exc: Exception,
+    ) -> float | None:
+
+        response = getattr(
+            exc,
+            "response",
+            None,
+        )
+
+        headers = getattr(
+            response,
+            "headers",
+            None,
+        )
+
+        if headers is None:
+            return None
+
+        try:
+            value = headers.get(
+                "Retry-After"
             )
+        except AttributeError:
+            return None
+
+        if value is None:
+            return None
+
+        try:
+            seconds = float(value)
+        except (TypeError, ValueError):
+            return None
+
+        if seconds < 0:
+            return None
+
+        return min(
+            seconds,
+            REALTIME_RECONNECT_MAX_DELAY,
+        )
+
+    @staticmethod
+    def _is_retryable_connection_error(
+        status_code: int | None,
+    ) -> bool:
+
+        if status_code is None:
+            # Erreurs réseau, WebSocket interrompu, timeout, etc.
+            return True
+
+        if status_code == 429:
+            return True
+
+        return 500 <= status_code <= 599
+
+    def _reset_connection_state(self) -> None:
+
+        self._input_audio_samples = 0
+        self._discarding_input = False
+
+        self._response_active = False
+        self._response_create_pending = False
+        self._response_audio_started = False
+        self._current_response_had_audio = False
+        self._current_audio_item_id = None
+        self._response_idle.set()
 
     async def _configure_session(
         self,
@@ -185,6 +397,31 @@ class RealtimeManager:
 
                     "Lorsque l'utilisateur demande une action "
                     "disponible via un outil, utilise cet outil. "
+
+                    "Mémoire personnelle : si l'utilisateur demande explicitement "
+                    "de retenir une information durable, utilise memory.store. "
+                    "Lorsqu'une demande dépend d'une préférence, d'un alias ou d'un "
+                    "fait personnel possiblement déjà mémorisé, notamment avec des "
+                    "formulations comme 'mon casque', 'ma préférence', 'comme "
+                    "d'habitude' ou 'qu'est-ce que tu sais sur...', utilise d'abord "
+                    "memory.search avec quelques mots-clés pertinents. "
+                    "Si plusieurs souvenirs correspondent, privilégie le résultat "
+                    "le plus directement lié à la demande et n'invente jamais une "
+                    "préférence absente de la mémoire. Si aucun souvenir ne correspond, "
+                    "dis-le clairement ou demande la précision nécessaire. "
+                    "Ne mémorise pas automatiquement les propos transitoires : sans "
+                    "demande explicite de mémorisation, contente-toi de consulter la mémoire. "
+                    "Lorsqu'une nouvelle préférence corrige ou remplace une ancienne, "
+                    "recherche d'abord le souvenir existant avec memory.search puis utilise "
+                    "memory.store avec une clé décrivant le même concept. Ne crée jamais deux "
+                    "préférences concurrentes pour le même réglage. Les clés sont normalisées "
+                    "localement, mais conserve si possible la clé du souvenir déjà trouvé. "
+
+                    "Automatisation : lorsqu'un utilisateur demande un rappel, utilise "
+                    "automation.reminder.create. Pour une durée relative, convertis-la en "
+                    "delay_seconds (par exemple 30 minutes = 1800). N'utilise run_at que si "
+                    "une date/heure absolue avec fuseau horaire est disponible. Une fois créé, "
+                    "le rappel est exécuté par le scheduler local même si OpenAI est indisponible. "
 
                     "Si l'utilisateur demande le mode vocal, le mode "
                     "Discord ou une écoute uniquement après le mot Sideron, "
