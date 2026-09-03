@@ -2,7 +2,7 @@
     "version":  "3.4.2-rc.1",
     "channel":  "rc",
     "url":  "https://github.com/Jexodi/SIDERON/releases/download/v3.4.2-rc.1/SIDERON-3.4.2-rc.1.exe",
-    "sha256":  "b19e0fea004efe7cd29c09e61712de334e9502dcbafe9f64b21eba55b3864622",
+    "sha256":  "1125a7e8821f723c04d45723d607980c5d6b7bca71c02f6a3dd3a641b351ba31",
     "notes":  "Sideron 3.4.2-rc.1 — Release Candidate du canal Experimental.",
-    "published_utc":  "2026-09-03T18:06:13Z"
+    "published_utc":  "2026-09-03T20:44:40Z"
 }
